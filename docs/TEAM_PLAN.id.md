@@ -225,7 +225,7 @@ Yang perlu diperhatikan: paruh kedua timeline (proses syuting video, finalisasi 
 
 - Android Studio telah terpasang; `google-ai-edge/gallery` telah di-fork dan di-clone; Gradle sync pertama berjalan bersih; gallery (tanpa modifikasi) berhasil di-build tanpa error.
 - **`gemma-4-E2B-it` tersedia pada model picker gallery tanpa memerlukan HuggingFace OAuth.** Hal ini menyelesaikan risiko Android terbesar yang sebelumnya teridentifikasi. Tidak diperlukan substitusi credential pada `ProjectConfig.kt` untuk jalur demo.
-- Model saat ini sedang di-download pada perangkat HP test (~2,5 GB melalui Wi-Fi). Konfirmasi inference masih menunggu.
+- Model telah berhasil di-download pada perangkat HP test. **Inference multimodal pertama berhasil dikonfirmasi** pada Samsung Galaxy A71 (HP mid-range tahun 2020, Snapdragon 730, tanpa NPU). Inference berbasis CPU dan membutuhkan ~20-60 detik per respons pada perangkat ini — lambat menurut standar flagship, namun disengaja menurut standar Global Resilience. **Inilah perangkat demo kita.**
 - Dashboard NusaSiaga telah di-push melalui commit `2668f7a` dengan seluruh revisi branding dan platform-positioning. Deployment Vercel masih menunggu.
 - Cache sintesis dari Colab E4B: hanya Scenario A yang dipertahankan (file cache di-overwrite pada setiap eksekusi). Scenario B dan C akan di-regenerate oleh Gemma 4 31B di Kaggle pada Hari 4 — kualitas yang dihasilkan lebih baik dibandingkan apabila dijalankan ulang pada Colab saat ini.
 
@@ -257,7 +257,7 @@ Setiap hari disertai rationale singkat yang menjelaskan *mengapa* aktivitas tert
 - [x] Clone fork tersebut di Android Studio ke direktori `D:\Projects\hackathon\gallery\Android\src`
 - [x] Gradle sync pertama (~22 menit pada percobaan pertama; build bersih pada retry)
 - [x] Menyambungkan perangkat HP test melalui USB; mengaktifkan USB debugging dari Developer Options
-- [ ] Menjalankan gallery (tanpa modifikasi) di HP; memastikan Gemma 4 E2B berhasil di-load dan berjalan (model saat ini sedang di-download)
+- [x] Menjalankan gallery (tanpa modifikasi) di HP; memastikan Gemma 4 E2B berhasil di-load dan berjalan — telah diverifikasi pada Samsung Galaxy A71 (HP keluaran 2020 dengan Snapdragon 730, tanpa NPU): inference multimodal image-to-text berjalan, ~20-60 detik per respons pada kelas perangkat ini. Kelambatan tersebut justru menjadi materi demo yang kuat untuk pitch Global Resilience.
 - [x] Telah teridentifikasi bahwa hanya Scenario A yang tersimpan pada cache sintesis Colab; Scenario B dan C ditangguhkan untuk eksekusi Kaggle 31B pada Hari 4
 - [ ] Eksekusi `git pull` pada `nusasiaga` main untuk memperoleh seluruh pekerjaan terkait unified-picker, scenario, branding, dan platform-positioning
 - [ ] Eksekusi `npm install && npm run dev` secara lokal pada dashboard untuk memastikan tree hasil merge dapat di-build tanpa error

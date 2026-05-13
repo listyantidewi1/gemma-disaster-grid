@@ -10,7 +10,7 @@ This is the **field-responder** half of the system. The other half (cloud-tier 3
 
 - `google-ai-edge/gallery` forked and cloned. First Gradle sync clean (~22 minutes). Unmodified app builds without errors.
 - **`gemma-4-E2B-it` is available in the gallery's model picker without HuggingFace OAuth.** No `ProjectConfig.kt` credential dance is needed for the demo path. The biggest pre-hackathon Android risk is resolved.
-- Model currently downloading on the test phone (~2.5 GB on Wi-Fi). First inference confirmation pending.
+- ✅ Model downloaded. First multimodal inference verified on a Samsung Galaxy A71 (2020 mid-range, Snapdragon 730 SoC, no NPU): image-to-text generation works at ~20-60 sec per response. CPU-bound on this hardware class — and that is the point. This is the device profile our Global Resilience pitch targets.
 - Drop-in Kotlin domain files at `app/src/main/kotlin/ai/grg/` are ready to copy into the gallery fork on Day 3.
 
 ---
