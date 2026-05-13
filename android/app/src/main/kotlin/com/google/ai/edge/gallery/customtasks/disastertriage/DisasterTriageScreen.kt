@@ -12,7 +12,12 @@ import ai.grg.EvacuationPriority
 import ai.grg.RoutingDecision
 import ai.grg.RoutingRecommendation
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.media.AudioFormat
+import android.media.AudioRecord
+import android.media.MediaRecorder
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -28,13 +33,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Camera
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -44,15 +53,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +80,23 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
+import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+private const val TAG = "DisasterTriageScreen"
+
+// LiteRT-LM expects 16 kHz mono PCM 16-bit, matching the gallery's
+// AudioRecorderPanel constants (Consts.kt::SAMPLE_RATE = 16000).
+private const val AUDIO_SAMPLE_RATE = 16000
+private const val AUDIO_CHANNEL = AudioFormat.CHANNEL_IN_MONO
+private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
+
+// Cap recordings so a stuck mic doesn't drain the battery and so
+// inference latency stays bounded on mid-range hardware.
+private const val MAX_RECORDING_SEC = 30
 
 @Composable
 fun DisasterTriageScreen(
@@ -79,26 +108,46 @@ fun DisasterTriageScreen(
   val model = modelManagerUiState.selectedModel
   val isModelReady = modelManagerUiState.isModelInitialized(model = model)
   val context = LocalContext.current
+  val coroutineScope = rememberCoroutineScope()
 
+  // Permissions.
   var hasCameraPermission by remember {
     mutableStateOf(
       ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
         PackageManager.PERMISSION_GRANTED
     )
   }
-
-  val permissionLauncher =
+  var hasMicPermission by remember {
+    mutableStateOf(
+      ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+        PackageManager.PERMISSION_GRANTED
+    )
+  }
+  val cameraPermLauncher =
     rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
       hasCameraPermission = granted
     }
+  val micPermLauncher =
+    rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+      hasMicPermission = granted
+    }
 
+  // Camera launcher.
   val cameraLauncher =
     rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
       if (bitmap != null) viewModel.onPhotoCaptured(bitmap)
     }
 
-  LaunchedEffect(Unit) {
-    if (!hasCameraPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
+  // Audio recording state (lives in the composable so AudioRecord can be
+  // released cleanly on dispose).
+  val audioRecordRef = remember { mutableStateOf<AudioRecord?>(null) }
+  val audioStreamRef = remember { ByteArrayOutputStream() }
+  val recordingJobRef = remember { mutableStateOf<Job?>(null) }
+
+  DisposableEffect(Unit) {
+    onDispose {
+      stopRecording(audioRecordRef, audioStreamRef, recordingJobRef)
+    }
   }
 
   if (!isModelReady) {
@@ -117,18 +166,48 @@ fun DisasterTriageScreen(
       uiState = uiState,
       onCapture = {
         if (hasCameraPermission) cameraLauncher.launch(null)
-        else permissionLauncher.launch(Manifest.permission.CAMERA)
+        else cameraPermLauncher.launch(Manifest.permission.CAMERA)
       },
+      onClear = viewModel::clearPhoto,
+    )
+
+    AudioBlock(
+      uiState = uiState,
+      onStartRecording = {
+        if (!hasMicPermission) {
+          micPermLauncher.launch(Manifest.permission.RECORD_AUDIO)
+          return@AudioBlock
+        }
+        viewModel.setRecording(recording = true, elapsedMs = 0)
+        recordingJobRef.value =
+          coroutineScope.launch {
+            startRecording(
+              audioRecordRef = audioRecordRef,
+              audioStream = audioStreamRef,
+              onElapsedMs = { ms -> viewModel.setRecording(recording = true, elapsedMs = ms) },
+              onMaxDurationReached = {
+                val bytes = stopRecording(audioRecordRef, audioStreamRef, recordingJobRef)
+                viewModel.onAudioCaptured(bytes, MAX_RECORDING_SEC * 1000L)
+              },
+            )
+          }
+      },
+      onStopRecording = {
+        val bytes = stopRecording(audioRecordRef, audioStreamRef, recordingJobRef)
+        viewModel.onAudioCaptured(bytes, uiState.recordingElapsedMs)
+      },
+      onClear = viewModel::clearAudio,
     )
 
     when (uiState.phase) {
-      TriagePhase.IDLE -> Unit
+      TriagePhase.IDLE -> InstructionsBlock()
       TriagePhase.CAPTURED ->
         ActionRow(
-          primaryLabel = "Run triage on device",
+          primaryLabel = triageButtonLabel(uiState),
           primaryIcon = Icons.Outlined.PlayArrow,
           onPrimary = { viewModel.runTriage(model) },
           onReset = viewModel::reset,
+          enabled = uiState.canTriage && !uiState.isRecording,
         )
       TriagePhase.INFERRING -> InferringBlock(uiState)
       TriagePhase.RESULT ->
@@ -139,6 +218,7 @@ fun DisasterTriageScreen(
             primaryIcon = Icons.Outlined.Refresh,
             onPrimary = viewModel::reset,
             onReset = null,
+            enabled = true,
           )
           RawOutputBlock(uiState.rawOutput)
         }
@@ -146,6 +226,14 @@ fun DisasterTriageScreen(
     }
   }
 }
+
+private fun triageButtonLabel(state: TriageUiState): String =
+  when {
+    state.capturedBitmap != null && state.capturedAudio != null -> "Run triage (photo + voice)"
+    state.capturedBitmap != null -> "Run triage (photo)"
+    state.capturedAudio != null -> "Run triage (voice)"
+    else -> "Run triage on device"
+  }
 
 @Composable
 private fun HeaderBlock() {
@@ -156,7 +244,7 @@ private fun HeaderBlock() {
       fontWeight = FontWeight.SemiBold,
     )
     Text(
-      "Offline · powered by Gemma 4 E2B",
+      "Offline · powered by Gemma 4 E2B · photo, voice, or both",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -164,7 +252,29 @@ private fun HeaderBlock() {
 }
 
 @Composable
-private fun PhotoBlock(uiState: TriageUiState, onCapture: () -> Unit) {
+private fun InstructionsBlock() {
+  Card(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(12.dp),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+  ) {
+    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+      Text(
+        "Provide at least one input.",
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Medium,
+      )
+      Text(
+        "Snap a photo, record a voice note, or both. Gemma 4 E2B will produce the triage report.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+  }
+}
+
+@Composable
+private fun PhotoBlock(uiState: TriageUiState, onCapture: () -> Unit, onClear: () -> Unit) {
   val bitmap = uiState.capturedBitmap
   Card(
     modifier = Modifier.fillMaxWidth(),
@@ -172,7 +282,7 @@ private fun PhotoBlock(uiState: TriageUiState, onCapture: () -> Unit) {
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
   ) {
     Box(
-      modifier = Modifier.fillMaxWidth().height(220.dp),
+      modifier = Modifier.fillMaxWidth().height(180.dp),
       contentAlignment = Alignment.Center,
     ) {
       if (bitmap != null) {
@@ -182,16 +292,30 @@ private fun PhotoBlock(uiState: TriageUiState, onCapture: () -> Unit) {
           modifier = Modifier.fillMaxSize(),
           contentScale = ContentScale.Crop,
         )
+        IconButton(
+          onClick = onClear,
+          modifier = Modifier.align(Alignment.TopEnd).padding(6.dp),
+        ) {
+          Box(
+            modifier =
+              Modifier.size(28.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.6f)),
+            contentAlignment = Alignment.Center,
+          ) {
+            Icon(
+              Icons.Outlined.Close,
+              contentDescription = "Discard photo",
+              tint = Color.White,
+              modifier = Modifier.size(18.dp),
+            )
+          }
+        }
       } else {
         Column(
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-          Icon(Icons.Outlined.Camera, contentDescription = null, modifier = Modifier.size(48.dp))
-          Text(
-            "Tap below to snap a scene",
-            style = MaterialTheme.typography.bodyMedium,
-          )
+          Icon(Icons.Outlined.Camera, contentDescription = null, modifier = Modifier.size(36.dp))
+          Text("Photo of the scene (optional)", style = MaterialTheme.typography.bodyMedium)
         }
       }
     }
@@ -202,7 +326,105 @@ private fun PhotoBlock(uiState: TriageUiState, onCapture: () -> Unit) {
   ) {
     Icon(Icons.Outlined.Camera, contentDescription = null)
     Text(
-      if (bitmap == null) "Snap & triage" else "Retake photo",
+      if (bitmap == null) "Snap photo" else "Retake photo",
+      modifier = Modifier.padding(start = 8.dp),
+    )
+  }
+}
+
+@Composable
+private fun AudioBlock(
+  uiState: TriageUiState,
+  onStartRecording: () -> Unit,
+  onStopRecording: () -> Unit,
+  onClear: () -> Unit,
+) {
+  val audio = uiState.capturedAudio
+  val isRecording = uiState.isRecording
+
+  Card(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(12.dp),
+    colors =
+      CardDefaults.cardColors(
+        containerColor =
+          if (isRecording) MaterialTheme.colorScheme.errorContainer
+          else MaterialTheme.colorScheme.surfaceVariant
+      ),
+  ) {
+    Box(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      contentAlignment = Alignment.Center,
+    ) {
+      when {
+        isRecording ->
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+          ) {
+            Box(
+              modifier =
+                Modifier.size(12.dp).clip(CircleShape).background(Color(0xFFD32F2F)),
+            )
+            Text(
+              "Recording…  ${formatMs(uiState.recordingElapsedMs)} / ${MAX_RECORDING_SEC}s",
+              style = MaterialTheme.typography.bodyMedium,
+              fontWeight = FontWeight.Medium,
+              color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+          }
+        audio != null ->
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+              Icon(Icons.Outlined.Mic, contentDescription = null)
+              Text(
+                "Voice note · ${formatMs(uiState.audioDurationMs)}",
+                style = MaterialTheme.typography.bodyMedium,
+              )
+            }
+            IconButton(onClick = onClear) {
+              Icon(Icons.Outlined.Close, contentDescription = "Discard voice note")
+            }
+          }
+        else ->
+          Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+          ) {
+            Icon(Icons.Outlined.Mic, contentDescription = null, modifier = Modifier.size(36.dp))
+            Text("Voice note of the scene (optional)", style = MaterialTheme.typography.bodyMedium)
+          }
+      }
+    }
+  }
+  Button(
+    onClick = if (isRecording) onStopRecording else onStartRecording,
+    modifier = Modifier.fillMaxWidth(),
+    colors =
+      if (isRecording)
+        ButtonDefaults.buttonColors(
+          containerColor = MaterialTheme.colorScheme.error,
+          contentColor = MaterialTheme.colorScheme.onError,
+        )
+      else ButtonDefaults.buttonColors(),
+  ) {
+    Icon(
+      if (isRecording) Icons.Outlined.Stop else Icons.Outlined.Mic,
+      contentDescription = null,
+    )
+    Text(
+      when {
+        isRecording -> "Stop recording"
+        audio != null -> "Re-record voice note"
+        else -> "Record voice note"
+      },
       modifier = Modifier.padding(start = 8.dp),
     )
   }
@@ -214,12 +436,13 @@ private fun ActionRow(
   primaryIcon: androidx.compose.ui.graphics.vector.ImageVector,
   onPrimary: () -> Unit,
   onReset: (() -> Unit)?,
+  enabled: Boolean,
 ) {
   Row(
     modifier = Modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(8.dp),
   ) {
-    Button(onClick = onPrimary, modifier = Modifier.weight(1f)) {
+    Button(onClick = onPrimary, modifier = Modifier.weight(1f), enabled = enabled) {
       Icon(primaryIcon, contentDescription = null)
       Text(primaryLabel, modifier = Modifier.padding(start = 8.dp))
     }
@@ -531,6 +754,82 @@ private fun LoadingState(message: String) {
       Text(message, style = MaterialTheme.typography.bodyMedium)
     }
   }
+}
+
+// ───────────────────────────── Audio capture ─────────────────────────────
+
+@SuppressLint("MissingPermission")
+private suspend fun startRecording(
+  audioRecordRef: androidx.compose.runtime.MutableState<AudioRecord?>,
+  audioStream: ByteArrayOutputStream,
+  onElapsedMs: (Long) -> Unit,
+  onMaxDurationReached: () -> Unit,
+) {
+  val minBuf = AudioRecord.getMinBufferSize(AUDIO_SAMPLE_RATE, AUDIO_CHANNEL, AUDIO_FORMAT)
+  audioRecordRef.value?.release()
+  audioStream.reset()
+
+  val recorder =
+    AudioRecord(
+      MediaRecorder.AudioSource.MIC,
+      AUDIO_SAMPLE_RATE,
+      AUDIO_CHANNEL,
+      AUDIO_FORMAT,
+      minBuf,
+    )
+  audioRecordRef.value = recorder
+
+  val buf = ByteArray(minBuf)
+  kotlinx.coroutines.coroutineScope {
+    launch(Dispatchers.IO) {
+      try {
+        recorder.startRecording()
+        val startMs = System.currentTimeMillis()
+        while (audioRecordRef.value?.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+          val n = recorder.read(buf, 0, buf.size)
+          if (n > 0) audioStream.write(buf, 0, n)
+          val elapsed = System.currentTimeMillis() - startMs
+          onElapsedMs(elapsed)
+          if (elapsed >= MAX_RECORDING_SEC * 1000L) {
+            onMaxDurationReached()
+            break
+          }
+          delay(50)
+        }
+      } catch (e: Exception) {
+        Log.e(TAG, "Recording loop crashed", e)
+      }
+    }
+  }
+}
+
+private fun stopRecording(
+  audioRecordRef: androidx.compose.runtime.MutableState<AudioRecord?>,
+  audioStream: ByteArrayOutputStream,
+  jobRef: androidx.compose.runtime.MutableState<Job?>,
+): ByteArray {
+  val recorder = audioRecordRef.value
+  try {
+    if (recorder?.recordingState == AudioRecord.RECORDSTATE_RECORDING) recorder.stop()
+  } catch (e: Exception) {
+    Log.w(TAG, "stopRecording: recorder already stopped", e)
+  }
+  recorder?.release()
+  audioRecordRef.value = null
+  jobRef.value?.cancel()
+  jobRef.value = null
+
+  val bytes = audioStream.toByteArray()
+  audioStream.reset()
+  Log.d(TAG, "Captured ${bytes.size} PCM bytes")
+  return bytes
+}
+
+private fun formatMs(ms: Long): String {
+  val totalSec = ms / 1000
+  val mm = totalSec / 60
+  val ss = totalSec % 60
+  return "%d:%02d".format(mm, ss)
 }
 
 private fun disasterLabel(type: DisasterType): String =

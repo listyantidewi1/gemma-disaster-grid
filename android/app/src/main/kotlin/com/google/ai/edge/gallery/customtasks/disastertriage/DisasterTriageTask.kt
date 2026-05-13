@@ -66,7 +66,7 @@ class DisasterTriageTask @Inject constructor() : CustomTask {
       model = model,
       taskId = task.id,
       supportImage = true,
-      supportAudio = false,
+      supportAudio = true,
       onDone = onDone,
       systemInstruction = Contents.of(EDGE_SYSTEM_PROMPT),
     )

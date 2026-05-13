@@ -41,12 +41,20 @@ enum class TriagePhase {
 data class TriageUiState(
   val phase: TriagePhase = TriagePhase.IDLE,
   val capturedBitmap: Bitmap? = null,
+  val capturedAudio: ByteArray? = null,
+  val audioDurationMs: Long = 0,
+  val isRecording: Boolean = false,
+  val recordingElapsedMs: Long = 0,
   val rawOutput: String = "",
   val report: EdgeTriageReport? = null,
   val routing: RoutingDecision? = null,
   val errorMessage: String? = null,
   val inferenceMs: Long = 0,
-)
+) {
+  /** Triage can run if we have a photo, an audio clip, or both. */
+  val canTriage: Boolean
+    get() = capturedBitmap != null || capturedAudio != null
+}
 
 @HiltViewModel
 class DisasterTriageViewModel @Inject constructor() : ViewModel() {
@@ -67,14 +75,51 @@ class DisasterTriageViewModel @Inject constructor() : ViewModel() {
     }
   }
 
+  fun clearPhoto() {
+    _uiState.update {
+      val next = it.copy(capturedBitmap = null)
+      next.copy(phase = if (next.canTriage) TriagePhase.CAPTURED else TriagePhase.IDLE)
+    }
+  }
+
+  fun onAudioCaptured(audioBytes: ByteArray, durationMs: Long) {
+    _uiState.update {
+      it.copy(
+        phase = TriagePhase.CAPTURED,
+        capturedAudio = audioBytes,
+        audioDurationMs = durationMs,
+        isRecording = false,
+        recordingElapsedMs = 0,
+        rawOutput = "",
+        report = null,
+        routing = null,
+        errorMessage = null,
+        inferenceMs = 0,
+      )
+    }
+  }
+
+  fun clearAudio() {
+    _uiState.update {
+      val next = it.copy(capturedAudio = null, audioDurationMs = 0)
+      next.copy(phase = if (next.canTriage) TriagePhase.CAPTURED else TriagePhase.IDLE)
+    }
+  }
+
+  fun setRecording(recording: Boolean, elapsedMs: Long = 0) {
+    _uiState.update { it.copy(isRecording = recording, recordingElapsedMs = elapsedMs) }
+  }
+
   fun reset() {
     _uiState.value = TriageUiState()
   }
 
   fun runTriage(model: Model) {
-    val bitmap = _uiState.value.capturedBitmap
-    if (bitmap == null) {
-      Log.w(TAG, "runTriage called without a captured bitmap")
+    val state = _uiState.value
+    val bitmap = state.capturedBitmap
+    val audio = state.capturedAudio
+    if (bitmap == null && audio == null) {
+      Log.w(TAG, "runTriage called with neither photo nor audio")
       return
     }
     if (model.instance == null) {
@@ -89,9 +134,15 @@ class DisasterTriageViewModel @Inject constructor() : ViewModel() {
 
     viewModelScope.launch(Dispatchers.Default) {
       val buf = StringBuilder()
+      val promptText =
+        when {
+          bitmap != null && audio != null -> "Triage this scene using the photo and the voice note."
+          bitmap != null -> "Triage this scene."
+          else -> "Triage this scene based on my voice note."
+        }
       model.runtimeHelper.runInference(
         model = model,
-        input = "Triage this scene.",
+        input = promptText,
         resultListener = { partial, done, _ ->
           if (partial.isNotEmpty()) {
             buf.append(partial)
@@ -108,7 +159,8 @@ class DisasterTriageViewModel @Inject constructor() : ViewModel() {
             it.copy(phase = TriagePhase.ERROR, errorMessage = message)
           }
         },
-        images = listOf(bitmap),
+        images = if (bitmap != null) listOf(bitmap) else emptyList(),
+        audioClips = if (audio != null) listOf(audio) else emptyList(),
       )
     }
   }
