@@ -1,0 +1,38 @@
+{
+  "scenario_id": "scenario_c_compound_flood_fire",
+  "scenario_label": "Compound disaster: flooding triggers electrical fires, simulated low-density urban setting, 60-minute window",
+  "context_note": "8 reports demonstrating how multi-hazard cases stress the synthesis tier. Same physical area sees rising water AND active electrical fires from short-circuited transformers. Reports conflict on whether the primary classification is flood or fire; synthesis must resolve and emit a compound classification with secondary types populated.",
+  "status": "SKELETON — to be filled out Day 2 with 8 full reports. Two seed reports below establish the conflicting-classification setup.",
+  "reports": [
+    {
+      "report_id": "c3f0e4d6-0001-4a9b-9c45-trans-1605",
+      "timestamp_iso": "2026-04-20T16:05:00Z",
+      "location": {"lat": -6.1751, "lon": 106.8650, "accuracy_m": 14, "label": "Jl. Industri III, near transformer 4B"},
+      "disaster_type": "fire",
+      "disaster_type_confidence": 0.81,
+      "severity": 4,
+      "severity_rationale": "Visible flames from electrical transformer; thick black smoke; flames spreading to adjacent wooden lean-to; ground around transformer also flooded ankle-deep.",
+      "hazards_visible": ["active electrical fire", "spreading to wood structure", "floodwater around live electrical equipment", "thick smoke"],
+      "people_visible": {"adults": 2, "children": 0, "elderly_apparent": 0, "injured_apparent": 0, "trapped_apparent": 0},
+      "immediate_action": "Evacuate 50m radius; request electrical utility immediate isolation; do NOT use water on electrical fire; deploy CO2 or dry chemical only.",
+      "evacuation_priority": "immediate",
+      "routing_recommendation": "deep_lane",
+      "routing_rationale": "Compound hazard: fire + flood + live electrical. Severity 4."
+    },
+    {
+      "report_id": "c3f0e4d6-0002-4a9b-9c45-indus-1612",
+      "timestamp_iso": "2026-04-20T16:12:00Z",
+      "location": {"lat": -6.1755, "lon": 106.8648, "accuracy_m": 16, "label": "Jl. Industri III, 40m west of transformer 4B"},
+      "disaster_type": "flood",
+      "disaster_type_confidence": 0.84,
+      "severity": 3,
+      "severity_rationale": "Same street as report c3f0e4d6-0001 but from a different angle: floodwater knee-deep and rising, partially visible smoke in background suggesting upstream fire.",
+      "hazards_visible": ["floodwater knee-deep and rising", "smoke visible from upstream", "possible electrical hazard nearby"],
+      "people_visible": {"adults": 3, "children": 1, "elderly_apparent": 0, "injured_apparent": 0, "trapped_apparent": 0},
+      "immediate_action": "Move family away from waterfront toward higher ground east; warn of upstream fire and electrical risk in floodwater; do not wade further.",
+      "evacuation_priority": "urgent",
+      "routing_recommendation": "deep_lane",
+      "routing_rationale": "Apparent conflict with prior report classification; same area, different primary hazard observed."
+    }
+  ]
+}

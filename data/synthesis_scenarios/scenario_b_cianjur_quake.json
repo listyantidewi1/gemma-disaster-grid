@@ -1,0 +1,53 @@
+{
+  "scenario_id": "scenario_b_cianjur_quake",
+  "scenario_label": "Earthquake aftermath, simulated Cianjur West Java context, 2-hour window",
+  "context_note": "Strong shallow earthquake. 15 reports across ~3km radius. Severity range 2-5 with one catastrophic building collapse, multiple priority zones, compound hazards (structural + gas + fire risk). Designed to exercise hardest-case synthesis with explicit conflict resolution and triage prioritization.",
+  "status": "SKELETON — to be filled out Day 2 with 15 full reports following the pattern of scenario_a. Three seed reports below establish the time window and geographic anchors.",
+  "reports": [
+    {
+      "report_id": "b2e9d3c5-0001-4f7a-8b34-cugen-0815",
+      "timestamp_iso": "2026-04-19T08:15:00Z",
+      "location": {"lat": -6.8214, "lon": 107.1395, "accuracy_m": 20, "label": "Cugenang village center, near madrasah"},
+      "disaster_type": "earthquake",
+      "disaster_type_confidence": 0.96,
+      "severity": 5,
+      "severity_rationale": "Two-story concrete building pancake-collapsed; arm visible protruding from rubble; active dust cloud; small fire at one corner indicating possible gas leak.",
+      "hazards_visible": ["pancake collapse with confirmed entrapment", "active fire", "suspected gas leak", "unstable rubble", "secondary collapse risk"],
+      "people_visible": {"adults": 0, "children": 0, "elderly_apparent": 0, "injured_apparent": 1, "trapped_apparent": 1},
+      "immediate_action": "Mark location for heavy rescue team; do not enter rubble; deploy fire suppression if extinguisher available without entering structure; isolate gas supply at street level.",
+      "evacuation_priority": "immediate",
+      "routing_recommendation": "deep_lane",
+      "routing_rationale": "Severity 5 with confirmed trapped person and compound hazards."
+    },
+    {
+      "report_id": "b2e9d3c5-0002-4f7a-8b34-pasir-0822",
+      "timestamp_iso": "2026-04-19T08:22:00Z",
+      "location": {"lat": -6.8232, "lon": 107.1380, "accuracy_m": 18, "label": "Pasirhayam street, residential row"},
+      "disaster_type": "earthquake",
+      "disaster_type_confidence": 0.92,
+      "severity": 4,
+      "severity_rationale": "Three single-story houses partially collapsed; visible cracks running through remaining walls; one elderly resident standing in shock outside, holding head.",
+      "hazards_visible": ["multiple partial collapses", "unstable remaining walls", "active aftershock risk", "debris blocking road"],
+      "people_visible": {"adults": 4, "children": 0, "elderly_apparent": 2, "injured_apparent": 1, "trapped_apparent": 0},
+      "immediate_action": "Move residents from beside damaged structures to open area; check elderly woman for head injury; clear road for emergency access.",
+      "evacuation_priority": "immediate",
+      "routing_recommendation": "deep_lane",
+      "routing_rationale": "Severity 4, vulnerable persons in continuing-collapse risk area."
+    },
+    {
+      "report_id": "b2e9d3c5-0003-4f7a-8b34-mande-0840",
+      "timestamp_iso": "2026-04-19T08:40:00Z",
+      "location": {"lat": -6.8164, "lon": 107.1428, "accuracy_m": 25, "label": "Mande school courtyard"},
+      "disaster_type": "earthquake",
+      "disaster_type_confidence": 0.89,
+      "severity": 3,
+      "severity_rationale": "School courtyard with cracked perimeter wall; ~30 children evacuated outside; teachers conducting headcount; one child with bandaged scrape.",
+      "hazards_visible": ["cracked perimeter wall", "aftershock risk", "fallen ceiling tiles inside"],
+      "people_visible": {"adults": 5, "children": 30, "elderly_apparent": 0, "injured_apparent": 1, "trapped_apparent": 0},
+      "immediate_action": "Confirm headcount; move children further from cracked wall; prepare bus or large vehicle for transport to staging area; alert parents.",
+      "evacuation_priority": "urgent",
+      "routing_recommendation": "deep_lane",
+      "routing_rationale": "Large vulnerable group (children) in damaged structure proximity."
+    }
+  ]
+}

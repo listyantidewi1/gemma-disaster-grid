@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Models (too large for git)
+*.litertlm
+*.tflite
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.task
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+*.apk
+*.aab
+*.keystore
+*.jks
+local.properties
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data we don't want to commit (we'll commit a smaller curated demo set)
+data/raw/
+data/full_dataset/
+data/datasets/
+data/downloads/
+*.mp4
+*.mov
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+
+# Browser partial downloads
+*.crdownload
+*.part
+*.partial
+
+# Secrets — never commit
+.env
+*.key
+secrets.json
+hf_token.txt
+kaggle.json
+
+# Hackathon working files (notes, exploration)
+scratch/
+notes_private/
