@@ -121,7 +121,7 @@ Emitted by Gemma 4 31B after ingesting an array of edge reports. Designed to fit
       "severity_implication": "string (≤200 chars)"
     }
   ],
-  "vulnerable_groups_summary": "string (≤300 chars, aggregated across reports: children, elderly, injured, trapped totals and where concentrated)",
+  "vulnerable_groups_summary": "string (≤400 chars, aggregated across reports: children, elderly, injured, trapped totals and where concentrated)",
   "recommended_actions": [
     {
       "action": "string (≤200 chars)",
@@ -137,7 +137,7 @@ Emitted by Gemma 4 31B after ingesting an array of edge reports. Designed to fit
       "rationale": "string (≤200 chars)"
     }
   ],
-  "data_confidence_notes": "string (≤400 chars, where the synthesis is uncertain, where reports are thin, what would improve confidence)"
+  "data_confidence_notes": "string (≤600 chars, where the synthesis is uncertain, where reports are thin, what would improve confidence)"
 }
 ```
 

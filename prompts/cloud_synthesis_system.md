@@ -59,7 +59,7 @@ Schema:
   "consolidated_hazards": [
     {"hazard": <string>, "report_count": <int>, "severity_implication": <string ≤200>}
   ],
-  "vulnerable_groups_summary": <string ≤300 chars>,
+  "vulnerable_groups_summary": <string ≤400 chars>,
   "recommended_actions": [
     {
       "action": <string ≤200 chars>,
@@ -75,7 +75,7 @@ Schema:
       "rationale": <string ≤200 chars>
     }
   ],
-  "data_confidence_notes": <string ≤400 chars, where data is thin, where you inferred, what would improve confidence>
+  "data_confidence_notes": <string ≤600 chars, where data is thin, where you inferred, what would improve confidence>
 }
 
 Reasoning approach:

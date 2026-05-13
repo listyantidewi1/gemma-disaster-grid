@@ -155,10 +155,10 @@ class CommandCenterSynthesis(BaseModel):
     estimated_affected: EstimatedAffected
     priority_zones: list[PriorityZone]
     consolidated_hazards: list[ConsolidatedHazard]
-    vulnerable_groups_summary: str = Field(max_length=300)
+    vulnerable_groups_summary: str = Field(max_length=400)
     recommended_actions: list[RecommendedAction]
     report_validity_notes: list[ReportValidityNote]
-    data_confidence_notes: str = Field(max_length=400)
+    data_confidence_notes: str = Field(max_length=600)
 
 
 def parse_edge_report(raw: str | dict) -> tuple[EdgeTriageReport | None, str | None]:
