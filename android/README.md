@@ -6,9 +6,9 @@ This is the **field-responder** half of the system. The other half (cloud-tier 3
 
 ---
 
-## Status — 2026-05-14 — Day 3 shipped
+## Status — 2026-05-14 — Day 3 shipped (tri-modal)
 
-The Android edge tier is **functionally complete and verified end-to-end on real hardware**. A field responder can launch the app, snap a photo, and receive a parsed `EdgeTriageReport` rendered as a structured result card — entirely offline, on a 2020 mid-range phone.
+The Android edge tier is **functionally complete and verified end-to-end on real hardware in all three input modes**. A field responder can launch the app and triage via a photo, a voice note, or both — entirely offline, on a 2020 mid-range phone.
 
 | Milestone | State |
 |---|---|
@@ -16,12 +16,15 @@ The Android edge tier is **functionally complete and verified end-to-end on real
 | `gemma-4-E2B-it` available without HuggingFace OAuth | ✅ Listed in gallery's model picker out of the box |
 | Multimodal inference verified on Samsung Galaxy A71 (Snapdragon 730, no NPU) | ✅ Image description in 20-60 s |
 | Structured JSON output from our system prompt | ✅ First-shot valid `EdgeTriageReport` JSON, all enum/range/length constraints respected |
-| Custom **Disaster Triage** task in the gallery (4 new files) | ✅ Hilt-discovered tile, locked system prompt, photo capture, streaming inference, parsed result card |
+| Custom **Disaster Triage** task in the gallery (4 new files) | ✅ Hilt-discovered tile, locked system prompt, streaming inference, parsed result card |
+| **Photo-only triage** | ✅ Verified on A71 |
+| **Voice-only triage** | ✅ Verified on A71. 16 kHz mono PCM via `AudioRecord`, wrapped in a 44-byte RIFF/WAVE header (LiteRT-LM's `miniaudio` decoder rejects raw PCM with error -10) |
+| **Photo + voice combined triage** | ✅ Verified on A71. Image is primary truth, voice provides context per the system prompt's modality-priority rules |
 | `parseEdgeReport()` round-trips on real model output | ✅ Including envelope-field fallback (UUID + ISO timestamp generated app-side) |
 | `decideRouting()` (Cactus Prize hook) rendered as fast/deep lane badge | ✅ |
 | Hardware floor demonstrated | ✅ Snapdragon 730 (2020 mid-range) — well below the Snapdragon 8 Gen 2 baseline most LiteRT demos target |
 
-The "CPU-bound 30-60 second" latency on a 5-year-old mid-range phone **is the Global Resilience point**: this is the device profile available in the field response contexts that benefit most from this work. We are not pitching a flagship-only system.
+The "CPU-bound 30-60 second" latency on a 5-year-old mid-range phone **is the Global Resilience point**: this is the device profile available in the field response contexts that benefit most from this work. We are not pitching a flagship-only system. Voice-only and combined triage land in the same latency band; the audio backend adds negligible overhead vs the vision pass.
 
 ---
 
