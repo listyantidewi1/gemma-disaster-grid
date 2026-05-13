@@ -265,19 +265,20 @@ Each day has a short rationale explaining *why* this is what we do this day, fol
 - [ ] Record the Vercel URL in this team plan and in the NusaSiaga README so we have one canonical Live Demo link
 - [ ] Set `NASA_FIRMS_MAP_KEY` in Vercel project settings (Settings → Environment Variables) so the wildfire view's live data works
 
-### Day 3 — 15 May
+### Day 3 — 14 May ✅ DONE (one calendar day ahead of plan)
 
-*Android customization day plus dashboard polish. The Kotlin domain files are already written; we drop them in, wire the inference loop to use our system prompt, and replace the gallery's free-form chat with a one-button capture flow.*
+*Android customization day. The plan was to drop the Kotlin domain files into the gallery fork and replace its chat flow with a triage flow. What shipped instead was cleaner: rather than replace anything, we added Disaster Triage as a new custom task alongside the gallery's built-in tasks, using its existing Hilt-injected plugin architecture. Everything in this section is verified working end-to-end on a Samsung Galaxy A71.*
 
-- [ ] Drop the four `ai.grg.*` Kotlin files into the gallery fork at the right package path (e.g. `app/src/main/kotlin/ai/grg/`)
-- [ ] Add `kotlinx-serialization-json:1.6.x` to dependencies and the `org.jetbrains.kotlin.plugin.serialization` plugin to `app/build.gradle.kts`
-- [ ] Replace the gallery's default chat flow with a single-button photo-capture → triage flow (this is the big UI change; the existing camera permission flow can be reused)
-- [ ] Inject our system prompt as the first user-turn content when calling the model
-- [ ] Decode the model output with `parseEdgeReport()` and render the resulting `EdgeTriageReport` as a result card with severity badge, hazards list, immediate action, and routing badge
-- [ ] Confirm Gemma 4 E2B downloads from the gallery's model picker and runs inside the customized app
-- [ ] Update Hazard Analyzer copy on the dashboard wildfire view: "Local Gemma analysis" → "Local Gemma 4 analysis" (small polish)
-- [ ] Capture screenshots of both Wildfire and Flood views from the Vercel deployment for the video editor
-- [ ] Refine the video storyboard in `writeup/video_script_v1.md` with the actual unified-picker visuals we now have
+- [x] Drop the four `ai.grg.*` Kotlin files into the gallery fork at `app/src/main/java/ai/grg/`
+- [x] (Not needed) `kotlinx-serialization-json` was already enabled in the gallery's `build.gradle.kts` — checked before adding redundantly
+- [x] **Validate the system prompt produces valid JSON before writing UI code.** Pasted `EDGE_SYSTEM_PROMPT` into the gallery's built-in Ask Image task, snapped a test photo. Result: first-shot valid `EdgeTriageReport` JSON in 30-60 s on the A71, every schema constraint respected (severity 1-5, confidence 0-1, enum values, char limits). This validated the highest-risk assumption in the whole project before sinking time into UI work.
+- [x] Build a `DisasterTriage` custom task with 4 new files in the gallery fork: `DisasterTriageTask.kt` (Hilt `CustomTask` implementation, locks our system prompt, `supportImage = true`), `DisasterTriageTaskModule.kt` (`@Provides @IntoSet` registration), `DisasterTriageViewModel.kt` (camera bitmap → `runtimeHelper.runInference()` → `parseEdgeReport()` → enrich with UUID + ISO timestamp → `decideRouting()`), `DisasterTriageScreen.kt` (header, photo card, "Snap & triage" button, streaming inference state, structured result card with color-coded severity badge / hazard chips / immediate-action callout / fast-or-deep-lane routing decision badge)
+- [x] Patch `Schemas.kt` to make the envelope fields (`report_id`, `timestamp_iso`, `location`) default — the on-device model doesn't see UUIDs / clock / GPS, those are app-generated post-parse
+- [x] Patch the gallery's `ModelManagerViewModel#loadModelAllowlist()` to attach any image-capable LLM (i.e. Gemma 4 E2B/E4B) to our custom task ID — without this the task tile pops back to home because the allowlist JSON doesn't know about `disaster_triage`
+- [x] Verify end-to-end on Galaxy A71: tile opens → model picker shows Gemma 4 E2B → user picks model → model loads with our locked system prompt → camera capture → streaming triage → parsed result card with severity badge, hazards chips, immediate action, routing decision
+- [x] Mirror the 4 task files + the schemas patch into `gemma-disaster-grid/android/app/src/main/kotlin/com/google/ai/edge/gallery/customtasks/disastertriage/` so the work is version-controlled in the canonical repo (the gallery fork is also pushed)
+- [x] Update `android/README.md` with a "Gallery integration — what shipped" section including the 4 new files, the `ModelManagerViewModel` patch as an inline diff, and measured A71 latency numbers
+- [ ] (Newbie, parallel) Pull `nusasiaga` main, deploy to Vercel with `NASA_FIRMS_MAP_KEY`, record the Live Demo URL here
 
 ### Day 4 — 16 May (Kaggle weekly quota resets at the start of this day)
 

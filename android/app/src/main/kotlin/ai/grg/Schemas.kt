@@ -69,12 +69,17 @@ data class PeopleVisible(
 /**
  * One field triage report — what Gemma 4 E2B emits on the responder's phone
  * after analyzing a photo plus optional voice/text annotation.
+ *
+ * report_id, timestamp_iso, and location are envelope fields the app
+ * generates around the model output (the on-device model doesn't see the
+ * UUID, system clock, or GPS), so they default here. The synthesis tier
+ * receives them filled in by the app before queue upload.
  */
 @Serializable
 data class EdgeTriageReport(
-    @SerialName("report_id") val reportId: String,
-    @SerialName("timestamp_iso") val timestampIso: String,
-    val location: GrgLocation,
+    @SerialName("report_id") val reportId: String = "",
+    @SerialName("timestamp_iso") val timestampIso: String = "",
+    val location: GrgLocation = GrgLocation(),
     @SerialName("disaster_type") val disasterType: DisasterType,
     @SerialName("disaster_type_confidence") val disasterTypeConfidence: Double,
     val severity: Int,

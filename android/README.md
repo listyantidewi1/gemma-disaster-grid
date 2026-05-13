@@ -6,12 +6,22 @@ This is the **field-responder** half of the system. The other half (cloud-tier 3
 
 ---
 
-## Status — 2026-05-14
+## Status — 2026-05-14 — Day 3 shipped
 
-- `google-ai-edge/gallery` forked and cloned. First Gradle sync clean (~22 minutes). Unmodified app builds without errors.
-- **`gemma-4-E2B-it` is available in the gallery's model picker without HuggingFace OAuth.** No `ProjectConfig.kt` credential dance is needed for the demo path. The biggest pre-hackathon Android risk is resolved.
-- ✅ Model downloaded. First multimodal inference verified on a Samsung Galaxy A71 (2020 mid-range, Snapdragon 730 SoC, no NPU): image-to-text generation works at ~20-60 sec per response. CPU-bound on this hardware class — and that is the point. This is the device profile our Global Resilience pitch targets.
-- Drop-in Kotlin domain files at `app/src/main/kotlin/ai/grg/` are ready to copy into the gallery fork on Day 3.
+The Android edge tier is **functionally complete and verified end-to-end on real hardware**. A field responder can launch the app, snap a photo, and receive a parsed `EdgeTriageReport` rendered as a structured result card — entirely offline, on a 2020 mid-range phone.
+
+| Milestone | State |
+|---|---|
+| Gallery fork builds clean | ✅ Gradle sync ~22 min, unmodified gallery installs and runs |
+| `gemma-4-E2B-it` available without HuggingFace OAuth | ✅ Listed in gallery's model picker out of the box |
+| Multimodal inference verified on Samsung Galaxy A71 (Snapdragon 730, no NPU) | ✅ Image description in 20-60 s |
+| Structured JSON output from our system prompt | ✅ First-shot valid `EdgeTriageReport` JSON, all enum/range/length constraints respected |
+| Custom **Disaster Triage** task in the gallery (4 new files) | ✅ Hilt-discovered tile, locked system prompt, photo capture, streaming inference, parsed result card |
+| `parseEdgeReport()` round-trips on real model output | ✅ Including envelope-field fallback (UUID + ISO timestamp generated app-side) |
+| `decideRouting()` (Cactus Prize hook) rendered as fast/deep lane badge | ✅ |
+| Hardware floor demonstrated | ✅ Snapdragon 730 (2020 mid-range) — well below the Snapdragon 8 Gen 2 baseline most LiteRT demos target |
+
+The "CPU-bound 30-60 second" latency on a 5-year-old mid-range phone **is the Global Resilience point**: this is the device profile available in the field response contexts that benefit most from this work. We are not pitching a flagship-only system.
 
 ---
 
@@ -30,31 +40,48 @@ Only Gradle dependency you must add: `org.jetbrains.kotlinx:kotlinx-serializatio
 
 ---
 
-## Recommended approach: fork Google AI Edge Gallery
+## Approach: fork Google AI Edge Gallery, plug in a custom task
 
-Don't build the LiteRT integration from scratch. Fork:
+Rather than building the LiteRT-LM Kotlin integration from scratch (model download, multimodal prompt construction, streaming inference, camera permission flow, Compose scaffolding — all non-trivial), we forked `google-ai-edge/gallery` and added Disaster Triage as a new entry in its existing **custom-task plugin architecture**. Gallery's home screen iterates over a Hilt-injected `Set<CustomTask>`; ours joins the set at app startup.
 
-```bash
-git clone https://github.com/google-ai-edge/gallery
+That gave us all of the gallery's infrastructure for free and let us focus the four Day-3 files on what's actually disaster-specific: the locked system prompt, the structured result-card UI, and the Cactus Prize routing badge.
+
+## Gallery integration — what shipped (Day 3)
+
+Two pieces of code go into a gallery fork to turn it into Gemma Rescue Grid: a Hilt-discovered custom task (4 new files), and a 4-line patch to the gallery's model registry so it knows that any image-capable LLM is also a valid model for our task.
+
+### Files in this repo
+
+| File | Purpose |
+|---|---|
+| [`app/src/main/kotlin/com/google/ai/edge/gallery/customtasks/disastertriage/DisasterTriageTask.kt`](app/src/main/kotlin/com/google/ai/edge/gallery/customtasks/disastertriage/DisasterTriageTask.kt) | Implements `CustomTask`. Locks the system prompt to `ai.grg.EDGE_SYSTEM_PROMPT`; opts into `supportImage = true`. |
+| [`DisasterTriageTaskModule.kt`](app/src/main/kotlin/com/google/ai/edge/gallery/customtasks/disastertriage/DisasterTriageTaskModule.kt) | Hilt `@Provides @IntoSet` binding so gallery auto-discovers the task. |
+| [`DisasterTriageViewModel.kt`](app/src/main/kotlin/com/google/ai/edge/gallery/customtasks/disastertriage/DisasterTriageViewModel.kt) | Holds the captured bitmap + inference state; calls `runtimeHelper.runInference()`; parses the raw model output via `ai.grg.parseEdgeReport`; enriches with generated `report_id` (UUID) + ISO timestamp; runs `ai.grg.decideRouting()` for the Cactus Prize hook. |
+| [`DisasterTriageScreen.kt`](app/src/main/kotlin/com/google/ai/edge/gallery/customtasks/disastertriage/DisasterTriageScreen.kt) | Compose UI: header → photo card → "Snap & triage" → streaming inference state → result card (severity badge color-coded 1-5, hazards as chips, people breakdown, highlighted immediate-action callout, routing decision with fast/deep-lane color). |
+
+These files have no real platform dependencies beyond the gallery types they import — copy them into a freshly-forked `google-ai-edge/gallery` at the same `app/src/main/...` path and they compile.
+
+### Required patch to gallery's model registry
+
+`ui/modelmanager/ModelManagerViewModel.kt#loadModelAllowlist()` builds the `task → models` mapping from each model's `taskTypes` list in the allowlist JSON. The allowlist is hosted externally (it doesn't know about our custom task ID), so without this patch our task tile would open into an empty model picker and immediately pop back.
+
+Add this block right after the existing `for (taskType in allowedModel.taskTypes) { ... }` loop, alongside the existing `LLM_TINY_GARDEN` special-case:
+
+```kotlin
+// Gemma Rescue Grid: any image-capable LLM (E2B / E4B) can power
+// on-device disaster triage. The allowlist JSON doesn't know about
+// our custom task id, so attach matching models here.
+if (allowedModel.taskTypes.contains(BuiltInTaskId.LLM_ASK_IMAGE)) {
+  val triageTask =
+    curTasks.find {
+      it.id ==
+        com.google.ai.edge.gallery.customtasks.disastertriage.DisasterTriageTask.TASK_ID
+    }
+  triageTask?.models?.add(model)
+}
 ```
 
-Gallery already implements:
-- LiteRT-LM model download + loading
-- Multimodal prompt construction (text + image + audio)
-- Inference loop with streaming
-- A working camera permission + capture flow
-- Compose UI scaffolding
-
-**What you change to make it Gemma Rescue Grid:**
-
-| Gallery file | Change |
-|---|---|
-| Model selection / download | Pin to `litert-community/gemma-4-E2B-it-litert-lm` only. Hide other models from the UI. |
-| Chat screen | Replace the free-form chat with a single-button "Snap & Triage" capture flow. Use CameraX or `ACTION_IMAGE_CAPTURE`. |
-| Prompt construction | Always prepend `ai.grg.EDGE_SYSTEM_PROMPT` as the first user-turn content. |
-| Output rendering | Parse output with `ai.grg.parseEdgeReport()`. Render an `EdgeTriageReport` as a result card: severity badge, hazards list, immediate action, routing badge. |
-| Sampling | Use `ai.grg.EdgeSamplingParams.TEMPERATURE = 1.0f, TOP_P = 0.95f, TOP_K = 64, MAX_NEW_TOKENS = 512`. |
-| Queue / sync (Day 4) | Add a Room database table for `EdgeTriageReport`. For demo: just toggle a "synced" flag locally; no real HTTPS upload needed. |
+That's the entire customization. The gallery's scaffold, model lifecycle, config UI, and accelerator picker carry over unchanged.
 
 ---
 
@@ -105,13 +132,15 @@ User opens the app                                 ▼
 
 ## Sampling, latency, and memory budget
 
-| Device class | Cold model load | First inference | Subsequent inference | VRAM |
+| Device class | Cold model load | First inference | Subsequent inference | Memory |
 |---|---|---|---|---|
-| Snapdragon 8 Gen 2 / Pixel 8 Pro | ~8 sec | ~5 sec | ~3 sec | ~2.5 GB |
-| Snapdragon 7+ Gen 3 / mid-range | ~12 sec | ~8 sec | ~5 sec | ~2.5 GB |
-| Snapdragon 6 series | ~20 sec | ~15 sec | ~10 sec | tight (4 GB phones may swap) |
+| Snapdragon 8 Gen 2 / Pixel 8 Pro (Google's published estimate) | ~8 sec | ~5 sec | ~3 sec | ~2.5 GB |
+| Snapdragon 7+ Gen 3 / mid-range (Google's published estimate) | ~12 sec | ~8 sec | ~5 sec | ~2.5 GB |
+| **Snapdragon 730 / Samsung Galaxy A71 (our measured floor, 2020 mid-range, no NPU)** | **~25 sec** | **30-60 sec** | **30-60 sec** | OK on 6 GB device |
 
-Numbers are Google AI Edge published estimates; we'll record real ones on the user's TUF A15 + their test Android phone for the writeup.
+The Snapdragon 730 row is our actual demo device, deliberately chosen as the worst-case hardware floor available. The "30-60 second triage on a 5-year-old phone" is the Global Resilience demonstration: when even this works, the architecture is viable on the device profile field response contexts can rely on.
+
+For sampling we recommend the `EdgeSamplingParams.DETERMINISTIC_*` profile (temperature 0.4, top-p 0.9) for JSON adherence. At the gallery's default chat-mode sampling (temperature 1.0) the JSON-strict prompt is roughly a coin flip; at 0.4 Gemma 4 E2B holds the format reliably.
 
 ## Build & install
 

@@ -265,19 +265,20 @@ Setiap hari disertai rationale singkat yang menjelaskan *mengapa* aktivitas tert
 - [ ] Mencatat URL Vercel pada rencana tim ini serta pada README NusaSiaga agar tersedia satu link Live Demo yang kanonik
 - [ ] Mengatur `NASA_FIRMS_MAP_KEY` pada pengaturan project Vercel (Settings → Environment Variables) agar data live untuk view wildfire dapat berjalan
 
-### Hari 3 — 15 Mei
+### Hari 3 — 14 Mei ✅ SELESAI (satu hari lebih cepat dari rencana)
 
-*Hari kustomisasi Android disertai polishing dashboard. File domain Kotlin telah disiapkan; kita tinggal menambahkannya, menghubungkan inference loop agar menggunakan system prompt kita, dan mengganti chat free-form bawaan gallery dengan flow capture satu-tombol.*
+*Hari kustomisasi Android. Rencana semula adalah melakukan drop file domain Kotlin ke dalam fork gallery serta mengganti chat flow gallery dengan triage flow. Yang ter-deliver justru lebih elegan: alih-alih melakukan penggantian, Disaster Triage ditambahkan sebagai custom task baru yang berdampingan dengan built-in task milik gallery, dengan memanfaatkan arsitektur plugin berbasis Hilt yang telah tersedia. Seluruh item pada bagian ini telah diverifikasi berjalan end-to-end pada Samsung Galaxy A71.*
 
-- [ ] Menambahkan keempat file Kotlin `ai.grg.*` ke fork gallery pada path package yang sesuai (sebagai contoh: `app/src/main/kotlin/ai/grg/`)
-- [ ] Menambahkan `kotlinx-serialization-json:1.6.x` ke dependencies dan plugin `org.jetbrains.kotlin.plugin.serialization` ke `app/build.gradle.kts`
-- [ ] Mengganti chat flow default dari gallery dengan single-button photo-capture → triage flow (ini merupakan perubahan UI yang besar; flow camera permission yang telah ada dapat digunakan kembali)
-- [ ] Melakukan inject pada system prompt kita sebagai konten user-turn pertama ketika memanggil model
-- [ ] Melakukan decode output model dengan `parseEdgeReport()` dan melakukan render terhadap `EdgeTriageReport` yang dihasilkan sebagai result card dengan severity badge, hazards list, immediate action, dan routing badge
-- [ ] Memastikan Gemma 4 E2B berhasil di-download dari model picker gallery dan dapat berjalan di dalam aplikasi yang telah dimodifikasi
-- [ ] Memperbarui teks Hazard Analyzer pada dashboard view wildfire: "Local Gemma analysis" → "Local Gemma 4 analysis" (polishing kecil)
-- [ ] Menangkap screenshot kedua view (Wildfire dan Flood) dari deployment Vercel untuk keperluan editor video
-- [ ] Refinement storyboard video pada `writeup/video_script_v1.md` dengan menggunakan visual unified-picker aktual yang telah tersedia
+- [x] Melakukan drop pada keempat file Kotlin `ai.grg.*` ke fork gallery pada `app/src/main/java/ai/grg/`
+- [x] (Tidak diperlukan) `kotlinx-serialization-json` ternyata telah diaktifkan pada `build.gradle.kts` milik gallery — telah diperiksa terlebih dahulu agar tidak melakukan penambahan yang redundan
+- [x] **Memvalidasi system prompt menghasilkan JSON yang valid terlebih dahulu sebelum menulis kode UI.** `EDGE_SYSTEM_PROMPT` dipaste ke built-in task Ask Image milik gallery, kemudian dilakukan capture foto uji. Hasil: JSON `EdgeTriageReport` yang valid pada percobaan pertama, dalam waktu 30-60 detik pada A71, seluruh constraint schema terpenuhi (severity 1-5, confidence 0-1, nilai enum, batas karakter). Validasi ini mengkonfirmasi asumsi paling kritis pada proyek ini sebelum kita menginvestasikan waktu pada pekerjaan UI.
+- [x] Membangun custom task `DisasterTriage` dengan 4 file baru pada fork gallery: `DisasterTriageTask.kt` (implementasi Hilt `CustomTask`, mengunci system prompt kita, `supportImage = true`), `DisasterTriageTaskModule.kt` (registrasi `@Provides @IntoSet`), `DisasterTriageViewModel.kt` (bitmap kamera → `runtimeHelper.runInference()` → `parseEdgeReport()` → enrich dengan UUID + timestamp ISO → `decideRouting()`), `DisasterTriageScreen.kt` (header, photo card, tombol "Snap & triage", state inference streaming, result card terstruktur dengan severity badge berwarna / hazard chips / callout immediate-action / badge keputusan routing fast-or-deep-lane)
+- [x] Melakukan patch pada `Schemas.kt` agar field envelope (`report_id`, `timestamp_iso`, `location`) memiliki default value — model on-device tidak memiliki akses ke UUID / clock / GPS, oleh karena itu seluruh field tersebut diisi oleh aplikasi pasca-parsing
+- [x] Melakukan patch pada `ModelManagerViewModel#loadModelAllowlist()` milik gallery untuk menempelkan model LLM yang mampu memproses gambar (yaitu Gemma 4 E2B/E4B) ke task ID kustom kami — tanpa patch ini, tile task akan langsung pop kembali ke home screen karena allowlist JSON tidak mengenali `disaster_triage`
+- [x] Memverifikasi end-to-end pada Galaxy A71: tile terbuka → model picker menampilkan Gemma 4 E2B → user memilih model → model di-load dengan system prompt terkunci → capture kamera → triage streaming → result card hasil parsing dengan severity badge, hazards chips, immediate action, dan routing decision
+- [x] Mirror 4 file task + patch schemas ke `gemma-disaster-grid/android/app/src/main/kotlin/com/google/ai/edge/gallery/customtasks/disastertriage/` agar seluruh pekerjaan ter-version-control pada repo kanonik (fork gallery juga di-push)
+- [x] Pembaruan `android/README.md` dengan section "Gallery integration — what shipped" termasuk 4 file baru, patch `ModelManagerViewModel` dalam bentuk diff inline, dan angka latency hasil pengukuran pada A71
+- [ ] (Newbie, paralel) Pull `nusasiaga` main, deploy ke Vercel dengan `NASA_FIRMS_MAP_KEY`, mencatat URL Live Demo di tempat ini
 
 ### Hari 4 — 16 Mei (kuota mingguan Kaggle dilakukan reset pada awal hari ini)
 
