@@ -6,6 +6,15 @@ This is the **field-responder** half of the system. The other half (cloud-tier 3
 
 ---
 
+## Status — 2026-05-14
+
+- `google-ai-edge/gallery` forked and cloned. First Gradle sync clean (~22 minutes). Unmodified app builds without errors.
+- **`gemma-4-E2B-it` is available in the gallery's model picker without HuggingFace OAuth.** No `ProjectConfig.kt` credential dance is needed for the demo path. The biggest pre-hackathon Android risk is resolved.
+- Model currently downloading on the test phone (~2.5 GB on Wi-Fi). First inference confirmation pending.
+- Drop-in Kotlin domain files at `app/src/main/kotlin/ai/grg/` are ready to copy into the gallery fork on Day 3.
+
+---
+
 ## Drop-in Kotlin domain layer
 
 The `app/src/main/kotlin/ai/grg/` directory contains four platform-agnostic Kotlin files you can drop straight into any Android project (or pure Kotlin/JVM project):

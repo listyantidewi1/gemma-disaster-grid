@@ -57,11 +57,16 @@ gemma4/
     └── kaggle_writeup_outline.md        ← 1500-word writeup structure
 ```
 
-## Status (2026-05-13)
+## Status — 2026-05-14
 
-| Day 1 | Day 2 | Day 3 | Day 4 | Day 5 | Day 6 |
-|---|---|---|---|---|---|
-| ✅ LiteRT/Gemma 4 risk killed; foundation files; schema | E2B prompt + 31B synthesis prompt running on test inputs | Android shell + routing UI; full sync demo | End-to-end run; prompt polish | Unsloth fine-tune; video edit | Final dry-run; **submit** |
+| Day | Status |
+|---|---|
+| Day 1 — 13 May | ✅ Foundation: schemas, prompts, three scenarios, routing, Colab notebook end-to-end. Synthesis verified on Gemma 4 E4B. Dual-track NusaSiaga dashboard with unified disaster-type picker. Kotlin domain scaffold. Writeup v0.5 (1573 words). Bilingual team plan. |
+| Day 2 — 14 May | 🟡 In progress. Android Studio installed, gallery forked, sync clean, build passes. **Gemma-4-E2B-it confirmed available in gallery picker without HuggingFace OAuth.** Model currently downloading on test phone. Vercel deploy pending. |
+| Day 3 — 15 May | Drop `ai.grg.*` Kotlin domain into gallery fork; replace gallery chat UI with photo-capture → triage flow; render `EdgeTriageReport` as result card. |
+| Day 4 — 16 May | Kaggle quota resets. Run notebook on 2× T4 with `unsloth/gemma-4-31B-it` for all three scenarios. Drop synthesis JSON into NusaSiaga; flip B and C from `pending` to `generated`. |
+| Day 5 — 17 May | Film 3-min video. Optional Unsloth fine-tune. Optional wildfire user-report scenario. |
+| Day 6 — 18 May | Trim writeup to ≤1500 words, dry run, **submit before 11:59 PM UTC**. |
 
 ## License
 

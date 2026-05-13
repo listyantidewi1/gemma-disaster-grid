@@ -221,6 +221,16 @@ Saat ini kita berjalan jauh lebih cepat dari jadwal manapun yang masuk akal — 
 
 Yang perlu diperhatikan: paruh kedua timeline (proses syuting video, finalisasi writeup, deployment ke Vercel, serta menjalankan aplikasi Android di perangkat fisik) memerlukan lebih banyak waktu dan lebih sulit diprediksi dibandingkan paruh pertama. **Mohon untuk tidak mengasumsikan bahwa sisa proyek akan terkompresi dengan cara yang sama.**
 
+### Snapshot status — 2026-05-14
+
+- Android Studio telah terpasang; `google-ai-edge/gallery` telah di-fork dan di-clone; Gradle sync pertama berjalan bersih; gallery (tanpa modifikasi) berhasil di-build tanpa error.
+- **`gemma-4-E2B-it` tersedia pada model picker gallery tanpa memerlukan HuggingFace OAuth.** Hal ini menyelesaikan risiko Android terbesar yang sebelumnya teridentifikasi. Tidak diperlukan substitusi credential pada `ProjectConfig.kt` untuk jalur demo.
+- Model saat ini sedang di-download pada perangkat HP test (~2,5 GB melalui Wi-Fi). Konfirmasi inference masih menunggu.
+- Dashboard NusaSiaga telah di-push melalui commit `2668f7a` dengan seluruh revisi branding dan platform-positioning. Deployment Vercel masih menunggu.
+- Cache sintesis dari Colab E4B: hanya Scenario A yang dipertahankan (file cache di-overwrite pada setiap eksekusi). Scenario B dan C akan di-regenerate oleh Gemma 4 31B di Kaggle pada Hari 4 — kualitas yang dihasilkan lebih baik dibandingkan apabila dijalankan ulang pada Colab saat ini.
+
+Bullet poin ini terikat tanggal. Informasi yang lebih lama dari ~12 jam mungkin sudah tidak relevan; mohon membaca ulang rencana hari per hari di bawah untuk mengetahui apa yang masih benar-benar terbuka.
+
 ---
 
 ## 11. Rencana hari per hari
@@ -241,18 +251,18 @@ Setiap hari disertai rationale singkat yang menjelaskan *mengapa* aktivitas tert
 
 ### Hari 2 — 14 Mei (hari ini)
 
-*Hari persiapan seluruh hal yang bersifat fisik. Android Studio sedang mengunduh SDK berukuran 5+ GB; proses deploy Vercel memerlukan env var; perangkat HP test memerlukan aktivasi USB debugging. Tidak ada di antara aktivitas ini yang sulit secara intelektual, namun seluruhnya harus diselesaikan sebelum Hari 3 hingga Hari 5.*
+*Hari persiapan seluruh hal yang bersifat fisik. Android Studio mengunduh SDK berukuran 5+ GB; proses deploy Vercel memerlukan env var; perangkat HP test memerlukan aktivasi USB debugging. Tidak ada di antara aktivitas ini yang sulit secara intelektual, namun seluruhnya harus diselesaikan sebelum Hari 3 hingga Hari 5.*
 
-- [ ] Melakukan fork pada `google-ai-edge/gallery` ke akun GitHub pribadi
-- [ ] Clone fork tersebut di Android Studio ke direktori `D:\Projects\hackathon\gallery\Android\src`
-- [ ] Gradle sync pertama (~15-30 menit — biarkan proses berjalan, mohon untuk tidak membatalkan)
-- [ ] Menyambungkan perangkat HP test melalui USB; mengaktifkan USB debugging dari Developer Options
-- [ ] Menjalankan gallery (tanpa modifikasi) di HP; memastikan salah satu LLM tile dapat melakukan loading model (model apa pun — yang diperlukan adalah konfirmasi bahwa inference dapat berjalan)
-- [ ] Menyalin (paste) isi `synthesis_cache_scenario_a.txt` (cache Colab) ke chat agar dapat diidentifikasi skenario apa yang dimuat di dalamnya dan diintegrasikan synthesis JSON tersebut ke dashboard
-- [ ] Eksekusi `git pull` pada `nusasiaga` main untuk memperoleh seluruh pekerjaan terkait unified-picker dan scenario
+- [x] Melakukan fork pada `google-ai-edge/gallery` ke akun GitHub pribadi
+- [x] Clone fork tersebut di Android Studio ke direktori `D:\Projects\hackathon\gallery\Android\src`
+- [x] Gradle sync pertama (~22 menit pada percobaan pertama; build bersih pada retry)
+- [x] Menyambungkan perangkat HP test melalui USB; mengaktifkan USB debugging dari Developer Options
+- [ ] Menjalankan gallery (tanpa modifikasi) di HP; memastikan Gemma 4 E2B berhasil di-load dan berjalan (model saat ini sedang di-download)
+- [x] Telah teridentifikasi bahwa hanya Scenario A yang tersimpan pada cache sintesis Colab; Scenario B dan C ditangguhkan untuk eksekusi Kaggle 31B pada Hari 4
+- [ ] Eksekusi `git pull` pada `nusasiaga` main untuk memperoleh seluruh pekerjaan terkait unified-picker, scenario, branding, dan platform-positioning
 - [ ] Eksekusi `npm install && npm run dev` secara lokal pada dashboard untuk memastikan tree hasil merge dapat di-build tanpa error
 - [ ] Deploy NusaSiaga ke Vercel untuk memperoleh URL Live Demo (free tier mencukupi; daftar menggunakan akun GitHub pemilik repo dashboard)
-- [ ] Mencatat URL Vercel pada README agar tersedia satu link Live Demo yang kanonik
+- [ ] Mencatat URL Vercel pada rencana tim ini serta pada README NusaSiaga agar tersedia satu link Live Demo yang kanonik
 - [ ] Mengatur `NASA_FIRMS_MAP_KEY` pada pengaturan project Vercel (Settings → Environment Variables) agar data live untuk view wildfire dapat berjalan
 
 ### Hari 3 — 15 Mei
@@ -345,7 +355,7 @@ Proyek dengan dua orang, satu produk. Semakin sering kita melakukan sinkronisasi
 
 | Risiko | Kemungkinan | Tindakan |
 |---|---|---|
-| **Download Gemma 4 E2B pada Android gagal** karena gallery membutuhkan HuggingFace OAuth dan kita belum menyiapkan developer app credentials | Sedang | Pertama, mencoba model picker default dari gallery tanpa OAuth — banyak model yang bersifat publik. Apabila hanya E2B yang membutuhkan OAuth, lakukan setup HF developer app sesuai dengan `DEVELOPMENT.md` di gallery dan perbarui `ProjectConfig.kt`. Skenario terburuk: menggunakan model yang lebih kecil yang telah pre-bundled untuk demo, dengan framing pada writeup berupa "arsitektur telah terbukti; bundle model akan menyusul pasca-hackathon" |
+| ~~**Download Gemma 4 E2B pada Android gagal** karena gallery membutuhkan HuggingFace OAuth~~ | **Telah teratasi pada 2026-05-14** | `gemma-4-E2B-it` tersedia langsung pada model picker gallery tanpa memerlukan HuggingFace OAuth credentials. Substitusi placeholder pada `ProjectConfig.kt` tidak diperlukan. Risiko dicoret, tidak diperlukan fallback |
 | **Eksekusi Kaggle 31B pada Hari 4 gagal** karena permasalahan memori, generasi yang lambat, atau error pada notebook | Rendah | Melakukan fallback ke output E4B dari Colab (kita telah memiliki Scenario A dari Hari 1) dan secara eksplisit mencantumkan pada writeup bahwa demo menggunakan E4B karena adanya keterbatasan compute. Narasi arsitektur tetap sama tanpa terpengaruh varian Gemma 4 mana yang dieksekusi |
 | **Deployment Vercel gagal karena API key FIRMS** | Rendah | Loader dashboard-hotspots pada view wildfire memiliki fallback chain 3-tier (FIRMS live → output notebook JSON → demo data). Meskipun API key belum di-set, page akan tetap melakukan render data hotspot demo. Apabila Vercel berhasil melakukan deploy, view wildfire akan berfungsi |
 | **Video tidak dapat diselesaikan pada Hari 5** karena syuting + editing memerlukan waktu lebih lama dari yang diperkirakan | Sedang | Memangkas menjadi versi 90-detik yang berfokus pada satu beat dari sisi dashboard (panel sintesis) ditambah satu beat dari sisi HP (mode pesawat + pengambilan foto + result card). Memanfaatkan banyak B-roll dan voice-over yang minimal |
