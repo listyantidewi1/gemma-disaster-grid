@@ -188,36 +188,56 @@ def extract_json_from_model_output(text: str) -> str | None:
 
     Gemma 4's `gemma-4-thinking` template can emit:
       <|channel>thought
-      <channel|>...reasoning text...<turn|>
-      {"actual": "json"}
+      ...reasoning text...
+      <channel|>{"actual": "json"}
 
     or sometimes wrap output in ```json fences. Returns the substring from the
-    first top-level `{` to its matching closing `}`, or None if no balanced
-    object is found.
+    first balanced top-level `{...}` that parses as JSON. If no candidate parses,
+    returns the first balanced object as a fallback so the caller's validator
+    can report a more informative error.
+
+    This iterates over every `{` in the text so that template placeholders like
+    `{"incident_id": <uuid>}` in the system prompt (where the angle-bracket
+    placeholders make the substring non-parseable JSON) are skipped in favor of
+    the model's actual emission later in the string.
     """
-    start = text.find("{")
-    if start == -1:
-        return None
-    depth = 0
-    in_string = False
-    escape = False
-    for i in range(start, len(text)):
-        ch = text[i]
-        if escape:
-            escape = False
+    candidates: list[str] = []
+    i = 0
+    while i < len(text):
+        if text[i] != "{":
+            i += 1
             continue
-        if ch == "\\":
-            escape = True
-            continue
-        if ch == '"':
-            in_string = not in_string
-            continue
-        if in_string:
-            continue
-        if ch == "{":
-            depth += 1
-        elif ch == "}":
-            depth -= 1
-            if depth == 0:
-                return text[start : i + 1]
-    return None
+        depth = 0
+        in_string = False
+        escape = False
+        for j in range(i, len(text)):
+            ch = text[j]
+            if escape:
+                escape = False
+                continue
+            if ch == "\\":
+                escape = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    candidate = text[i : j + 1]
+                    candidates.append(candidate)
+                    try:
+                        json.loads(candidate)
+                        return candidate
+                    except json.JSONDecodeError:
+                        pass
+                    i = j + 1
+                    break
+        else:
+            # Reached end of text without closing the brace.
+            break
+    return candidates[0] if candidates else None
