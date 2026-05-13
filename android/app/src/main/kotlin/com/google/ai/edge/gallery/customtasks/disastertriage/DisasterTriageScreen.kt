@@ -819,10 +819,72 @@ private fun stopRecording(
   jobRef.value?.cancel()
   jobRef.value = null
 
-  val bytes = audioStream.toByteArray()
+  val pcmBytes = audioStream.toByteArray()
   audioStream.reset()
-  Log.d(TAG, "Captured ${bytes.size} PCM bytes")
-  return bytes
+  val wav = pcmToWav(pcm = pcmBytes, sampleRate = AUDIO_SAMPLE_RATE)
+  Log.d(TAG, "Captured ${pcmBytes.size} PCM bytes -> ${wav.size} WAV bytes")
+  return wav
+}
+
+/**
+ * Prepend a 44-byte RIFF/WAVE header to raw PCM so LiteRT-LM's miniaudio
+ * decoder can read it. Raw PCM yields "Failed to initialize miniaudio
+ * decoder, error code: -10". Mono, 16-bit, sample rate as recorded.
+ *
+ * Header layout mirrors the gallery's ChatMessageAudioClip.genByteArrayForWav().
+ */
+private fun pcmToWav(pcm: ByteArray, sampleRate: Int): ByteArray {
+  val channels = 1
+  val bitsPerSample = 16
+  val byteRate = sampleRate * channels * bitsPerSample / 8
+  val pcmSize = pcm.size
+  val totalSize = pcmSize + 44
+
+  val header = ByteArray(44)
+  // "RIFF"
+  header[0] = 'R'.code.toByte(); header[1] = 'I'.code.toByte()
+  header[2] = 'F'.code.toByte(); header[3] = 'F'.code.toByte()
+  // total size - 8
+  header[4] = (totalSize and 0xff).toByte()
+  header[5] = (totalSize shr 8 and 0xff).toByte()
+  header[6] = (totalSize shr 16 and 0xff).toByte()
+  header[7] = (totalSize shr 24 and 0xff).toByte()
+  // "WAVE"
+  header[8] = 'W'.code.toByte(); header[9] = 'A'.code.toByte()
+  header[10] = 'V'.code.toByte(); header[11] = 'E'.code.toByte()
+  // "fmt "
+  header[12] = 'f'.code.toByte(); header[13] = 'm'.code.toByte()
+  header[14] = 't'.code.toByte(); header[15] = ' '.code.toByte()
+  // subchunk1 size = 16 (PCM)
+  header[16] = 16; header[17] = 0; header[18] = 0; header[19] = 0
+  // audio format = 1 (PCM)
+  header[20] = 1; header[21] = 0
+  // num channels
+  header[22] = channels.toByte(); header[23] = 0
+  // sample rate
+  header[24] = (sampleRate and 0xff).toByte()
+  header[25] = (sampleRate shr 8 and 0xff).toByte()
+  header[26] = (sampleRate shr 16 and 0xff).toByte()
+  header[27] = (sampleRate shr 24 and 0xff).toByte()
+  // byte rate
+  header[28] = (byteRate and 0xff).toByte()
+  header[29] = (byteRate shr 8 and 0xff).toByte()
+  header[30] = (byteRate shr 16 and 0xff).toByte()
+  header[31] = (byteRate shr 24 and 0xff).toByte()
+  // block align
+  header[32] = (channels * bitsPerSample / 8).toByte(); header[33] = 0
+  // bits per sample
+  header[34] = bitsPerSample.toByte(); header[35] = 0
+  // "data"
+  header[36] = 'd'.code.toByte(); header[37] = 'a'.code.toByte()
+  header[38] = 't'.code.toByte(); header[39] = 'a'.code.toByte()
+  // data size
+  header[40] = (pcmSize and 0xff).toByte()
+  header[41] = (pcmSize shr 8 and 0xff).toByte()
+  header[42] = (pcmSize shr 16 and 0xff).toByte()
+  header[43] = (pcmSize shr 24 and 0xff).toByte()
+
+  return header + pcm
 }
 
 private fun formatMs(ms: Long): String {
