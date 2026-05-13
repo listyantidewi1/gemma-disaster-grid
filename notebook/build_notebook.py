@@ -108,19 +108,37 @@ CELLS = [
 
     code("""
         # ── Clone the project repo ─────────────────────────────────────────
-        # Idempotent: pulls latest if already present. Drops us into the
-        # repo root so relative paths in later cells (prompts/, data/, etc.)
-        # resolve correctly.
+        # Idempotent and re-run safe: always operates on an absolute path so
+        # re-running this cell after we've already chdir'd into the repo
+        # can't accidentally create a nested clone.
         import os, subprocess
         REPO_URL = "https://github.com/listyantidewi1/gemma-disaster-grid.git"
-        REPO_DIR = "gemma-disaster-grid"
-        if not os.path.isdir(REPO_DIR):
-            subprocess.run(["git", "clone", "--depth", "1", REPO_URL], check=True)
+        # Pick a sensible base depending on the environment.
+        if os.path.isdir("/content"):
+            BASE = "/content"            # Google Colab
+        elif os.path.isdir("/kaggle/working"):
+            BASE = "/kaggle/working"     # Kaggle
         else:
-            subprocess.run(["git", "-C", REPO_DIR, "pull", "--ff-only"], check=False)
+            BASE = os.path.abspath(".")  # local
+        REPO_DIR = os.path.join(BASE, "gemma-disaster-grid")
+
+        if not os.path.isdir(REPO_DIR):
+            subprocess.run(
+                ["git", "clone", "--depth", "1", REPO_URL, REPO_DIR],
+                check=True,
+            )
+        else:
+            subprocess.run(
+                ["git", "-C", REPO_DIR, "pull", "--ff-only"],
+                check=False,
+            )
         os.chdir(REPO_DIR)
-        print("CWD:", os.getcwd())
-        print("Files at root:", sorted(os.listdir(".")))
+        last_commit = subprocess.run(
+            ["git", "log", "-1", "--oneline"],
+            capture_output=True, text=True,
+        ).stdout.strip()
+        print(f"CWD: {os.getcwd()}")
+        print(f"At commit: {last_commit}")
     """),
 
     # ─── 2. Model selection ──────────────────────────────────────────────
@@ -259,10 +277,18 @@ CELLS = [
         import sys, re, pathlib
         sys.path.insert(0, str(pathlib.Path.cwd()))
 
+        # Purge any cached grg modules so a fresh `git pull` from the clone
+        # cell is reflected in the import below. Without this, an earlier
+        # run of this cell can pin Python to a stale version of the package.
+        for _mod in list(sys.modules):
+            if _mod == "grg" or _mod.startswith("grg."):
+                del sys.modules[_mod]
+
         from grg import (
             EdgeTriageReport, CommandCenterSynthesis,
             parse_edge_report, parse_synthesis,
             extract_json_from_model_output,
+            attempt_truncated_json_repair,
             RoutingContext, decide_routing, render_routing_badge,
         )
 
