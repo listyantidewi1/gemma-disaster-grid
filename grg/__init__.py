@@ -1,4 +1,9 @@
-"""Gemma Rescue Grid notebook utilities."""
+"""Gemma Rescue Grid - shared utilities used by both the Colab/Kaggle notebook
+and the local smoke test.
+
+This package was named `grg` (not `notebook` or `utils`) deliberately because
+Jupyter's own `notebook` package would shadow it on Colab.
+"""
 
 from .schemas import (
     EdgeTriageReport,

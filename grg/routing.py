@@ -118,7 +118,7 @@ def decide_routing(report: EdgeTriageReport, context: RoutingContext) -> Routing
             decision="deep_lane",
             rationale=(
                 f"Escalated: {context.recent_reports_same_area_60min} prior reports "
-                f"within 200m in the last hour — likely correlated"
+                f"within 200m in the last hour - likely correlated"
             ),
             model_recommendation="fast_lane",
             overridden=True,

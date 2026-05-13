@@ -251,7 +251,7 @@ CELLS = [
         import sys, re, pathlib
         sys.path.insert(0, str(pathlib.Path.cwd()))
 
-        from notebook.utils import (
+        from grg import (
             EdgeTriageReport, CommandCenterSynthesis,
             parse_edge_report, parse_synthesis,
             extract_json_from_model_output,

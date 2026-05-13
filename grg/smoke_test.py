@@ -2,7 +2,7 @@
 exercise the routing function on every parsed report.
 
 Run from the project root:
-    python notebook/utils/smoke_test.py
+    python grg/smoke_test.py
 """
 
 from __future__ import annotations
@@ -12,10 +12,10 @@ import sys
 from pathlib import Path
 
 # Add project root to path so this script works when run directly.
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from notebook.utils import (  # noqa: E402
+from grg import (  # noqa: E402
     EdgeTriageReport,
     RoutingContext,
     decide_routing,
@@ -44,7 +44,7 @@ def smoke_test_scenario(path: Path) -> tuple[int, int]:
 
 def main() -> int:
     print("=" * 72)
-    print("Gemma Rescue Grid — schema + routing smoke test")
+    print("Gemma Rescue Grid - schema + routing smoke test")
     print("=" * 72)
 
     scenarios = sorted(SCENARIO_DIR.glob("scenario_*.json"))
@@ -64,12 +64,12 @@ def main() -> int:
     print(f"\nOVERALL: {total_ok}/{total_all} reports parsed.")
 
     if total_ok != total_all:
-        print("FAIL — schema and scenario JSON are out of sync.")
+        print("FAIL - schema and scenario JSON are out of sync.")
         return 1
 
     # Exercise routing on every parsed report from scenario A.
     print("\n" + "=" * 72)
-    print("Routing demo — scenario A (Jakarta flood)")
+    print("Routing demo - scenario A (Jakarta flood)")
     print("=" * 72)
     scenario_a = json.loads(
         (SCENARIO_DIR / "scenario_a_jakarta_flood.json").read_text(encoding="utf-8")
@@ -91,7 +91,7 @@ def main() -> int:
         print(f"  [sev {report.severity}] {marker} {render_routing_badge(decision)[:100]}")
         area_counts[label] = area_counts.get(label, 0) + 1
 
-    print("\nOK — schemas and routing both healthy. Day 2 can build on this.")
+    print("\nOK - schemas and routing both healthy. Day 2 can build on this.")
     return 0
 
 

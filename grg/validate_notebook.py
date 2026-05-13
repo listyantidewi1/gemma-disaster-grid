@@ -1,11 +1,11 @@
 """Quick local validation of the generated notebook and prompt extraction.
 
-Doesn't require Gemma 4 to run — just verifies the file structure,
+Doesn't require Gemma 4 to run - just verifies the file structure,
 JSON validity, and that our regex-based system-prompt extraction recovers
 the actual prompt from the .md files.
 
 Run from project root:
-    python notebook/utils/validate_notebook.py
+    python grg/validate_notebook.py
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def check_notebook() -> bool:
