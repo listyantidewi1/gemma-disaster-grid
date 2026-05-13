@@ -206,8 +206,12 @@ CELLS = [
                        stream: bool = True) -> str:
             \"\"\"Run one Gemma 4 generation with prepended system context.
 
-            Returns the full decoded string (including any <|channel>thought
-            trace and the final JSON object).
+            Returns ONLY the model's generated tokens decoded as a string
+            (which will include any <|channel>thought reasoning trace and
+            the final JSON object). The input prompt is sliced off — without
+            this, batch_decode would also include the system prompt and our
+            JSON extractor would grab the schema TEMPLATE from the prompt
+            instead of the model's actual JSON output.
             \"\"\"
             full_user = f"{system_prompt}\\n\\n---\\n\\n{user_content}"
             messages = [{
@@ -221,6 +225,7 @@ CELLS = [
                 tokenize=True,
                 return_dict=True,
             ).to("cuda")
+            input_length = inputs["input_ids"].shape[1]
 
             gen_kwargs = dict(
                 **inputs,
@@ -233,7 +238,9 @@ CELLS = [
             if stream:
                 gen_kwargs["streamer"] = TextStreamer(tokenizer, skip_prompt=True)
             outputs = model.generate(**gen_kwargs)
-            return tokenizer.batch_decode(outputs, skip_special_tokens=False)[0]
+            # Slice off the input prompt — return only generated tokens.
+            generated = outputs[0, input_length:]
+            return tokenizer.decode(generated, skip_special_tokens=False)
 
         print("synthesize() ready.")
     """),
