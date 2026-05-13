@@ -22,11 +22,15 @@ Apabila hanya tersedia waktu untuk membaca satu bagian, bagian ini adalah yang p
 
 ## 2. Permasalahan yang sedang diselesaikan
 
-Pada saat bencana terjadi — gempa magnitudo 5,6 di Cianjur, banjir bandang di Jakarta Pusat, kebakaran lahan gambut di Riau — satu jam pertama merupakan periode paling mematikan. Periode tersebut sekaligus merupakan jam dengan kondisi konektivitas terburuk. Menara seluler rubuh. Bandwidth terputus. Informasi yang sampai kepada koordinator darurat tiba dalam bentuk lima puluh pesan WhatsApp yang tidak tersinkronisasi, foto buram dari perangkat yang bergetar, serta deskripsi yang disampaikan melalui radio dengan kondisi terdesak. Tim bantuan menghabiskan jam pertama yang sangat kritis hanya untuk membaca informasi tersebut.
+Pada saat bencana terjadi — di mana pun di seluruh dunia — satu jam pertama merupakan periode paling mematikan. Periode tersebut sekaligus merupakan jam dengan kondisi konektivitas terburuk. Menara seluler rubuh. Bandwidth terputus. Informasi yang sampai kepada koordinator darurat tiba dalam bentuk lima puluh pesan WhatsApp yang tidak tersinkronisasi, foto buram dari perangkat yang bergetar, serta deskripsi yang disampaikan melalui radio dengan kondisi terdesak. Tim bantuan menghabiskan jam pertama yang sangat kritis hanya untuk membaca informasi tersebut.
+
+Pola ini bersifat universal — badai di Karibia, gempa di Türkiye, banjir bandang di Bangladesh, kebakaran lahan gambut di Riau, gempa dangkal di Cianjur, atau kecelakaan industri di Surabaya. Bentuk bencananya berbeda; namun permasalahan respons lapangannya identik.
 
 Perangkat AI bencana yang tersedia saat ini gagal tepat pada momen ini karena (a) memerlukan koneksi cloud yang stabil untuk dapat berfungsi, atau (b) merupakan chatbot berbasis teks yang tidak mampu membaca foto jalanan yang terendam banjir.
 
 Gemma 4 merupakan keluarga model *open* pertama yang dirancang untuk menjawab kedua ujung permasalahan ini secara bersamaan: varian on-device 2,3 miliar parameter efektif yang berjalan sepenuhnya pada perangkat melalui Google AI Edge LiteRT, dan varian cloud 31 miliar parameter untuk reasoning lintas laporan yang lebih mendalam. **Keluarga model yang sama, kontrak JSON yang sama, prompt yang sama dapat dijalankan pada kedua skala tersebut.** Hal inilah yang menjadi landasan teknis bagi keberadaan proyek ini.
+
+Skenario demonstrasi kami berlokasi di Indonesia (banjir Jakarta, gempa Cianjur, peristiwa kompleks banjir-kebakaran industri) karena itu merupakan konteks kerja tim. Arsitekturnya dirancang untuk dapat di-deploy di negara mana pun di mana responden dapat memegang sebuah perangkat HP.
 
 ---
 

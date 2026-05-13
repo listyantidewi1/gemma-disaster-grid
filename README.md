@@ -1,8 +1,8 @@
 # Gemma Rescue Grid
 
-**Offline Disaster Intelligence Agent — built on Gemma 4.**
+*The Python / Android / writeup half of [**NusaSiaga · Gemma Rescue Grid**](https://github.com/NoesaaDecodes/nusasiaga) — an offline-first disaster intelligence platform built on Gemma 4, for communities anywhere.*
 
-When the cell tower dies, coordination dies with it. Gemma Rescue Grid puts a multimodal first responder in every pocket, then synthesizes every field report into a single operating picture the moment the signal returns.
+When the cell tower dies, coordination dies with it. Gemma Rescue Grid puts a multimodal first responder in every pocket, then synthesizes every field report into a single operating picture the moment the signal returns. The architecture is disaster-type-agnostic — wildfire, flood, earthquake, industrial fire today; tsunami, landslide, volcanic, storm next.
 
 This project is a submission to [The Gemma 4 Good Hackathon](https://www.kaggle.com/competitions/gemma-4-good-hackathon) (deadline 2026-05-18). Target tracks: **Impact / Global Resilience** + **Special Tech / Cactus** (intelligent on-device model routing).
 

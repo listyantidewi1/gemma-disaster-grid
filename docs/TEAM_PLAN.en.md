@@ -22,11 +22,15 @@ If you only read one section, read this one.
 
 ## 2. What problem we are solving
 
-When a disaster strikes — a 5.6 earthquake in Cianjur, a flash flood in central Jakarta, a peatland fire in Riau — the first hour is the deadliest. It's also the hour with the worst connectivity. Cell towers go down. Bandwidth collapses. The information that reaches an emergency coordinator arrives as fifty unsynced WhatsApp messages, blurry photos taken on shaking phones, and shouted radio descriptions. Aid teams spend the first critical hour just trying to read.
+When a disaster strikes — anywhere on the planet — the first hour is the deadliest. It's also the hour with the worst connectivity. Cell towers go down. Bandwidth collapses. The information that reaches an emergency coordinator arrives as fifty unsynced WhatsApp messages, blurry photos taken on shaking phones, and shouted radio descriptions. Aid teams spend the first critical hour just trying to read.
+
+This pattern is universal — a hurricane in the Caribbean, an earthquake in Türkiye, a flash flood in Bangladesh, a peatland fire in Riau, a shallow quake in Cianjur, an industrial accident in Surabaya. The shape of the disaster differs; the field-response problem is identical.
 
 Existing AI disaster tools fail at exactly this moment because they either (a) require steady cloud connectivity to function, or (b) are text-only chatbots that cannot read a photograph of a flooded street.
 
 Gemma 4 is the first open model family designed to span both ends of this problem at once: a 2.3-billion-effective-parameter on-device variant that runs entirely on a phone via Google AI Edge LiteRT, and a 31-billion-parameter cloud variant for serious cross-report reasoning. **Same family, same JSON contract, same prompts work at both scales.** That is the technical insight that makes this project worth doing in the first place.
+
+Our demonstration scenarios are Indonesian (Jakarta flood, Cianjur quake, an industrial flood-fire event) because that is the team's home context. The architecture is designed to deploy in any country where a responder can hold a phone.
 
 ---
 
