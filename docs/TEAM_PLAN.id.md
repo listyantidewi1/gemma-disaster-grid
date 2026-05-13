@@ -30,19 +30,15 @@ Keluarga Gemma 4 yang sama di setiap tingkat. Open weights Apache 2.0 dari atas 
 
 Bobot penilaian: 40 poin Impact & Vision · 30 poin Video Pitch & Storytelling · 30 poin Technical Depth. **Video memegang sekitar 70% dari total nilai.**
 
-## 3. Peran & tanggung jawab
+## 3. Catatan kecepatan
 
-| Orang | Tanggung jawab | Repo yang dia push |
-|---|---|---|
-| **Listyantidewi (lead)** | App Android · Notebook Kaggle · Python schemas · Kotlin domain · Writeup · Koordinasi video | `gemma-disaster-grid` · `nusasiaga` (hanya bersifat tambahan) |
-| **Noesaa Decodes** | Dashboard NusaSiaga (track wildfire / NASA FIRMS) · Deployment Vercel · Polishing tampilan tab Flood | `nusasiaga` (pemilik utama) |
-| **Keputusan bersama** | Branding · skrip video · arah writeup · isi submission | Diskusi dulu sebelum push |
+Kita lagi jalan jauh lebih cepat dari jadwal manapun yang masuk akal — pekerjaan yang awalnya dianggarkan untuk Hari 1 dan Hari 2 sebagian besar sudah selesai dalam jam-jam pertama Hari 1. **Rencana hari per hari di bawah ini adalah anggaran, bukan batas bawah.** Banyak item yang tertulis untuk "hari ini" atau "besok" sudah selesai. Baca ulang checklist sesuai urutan untuk tahu apa yang sebenarnya tersisa.
 
 ## 4. Peta repository
 
 ### `github.com/listyantidewi1/gemma-disaster-grid`
 
-Repo Python / Android / writeup. Pemilik: Listyantidewi.
+Repo Python / Android / writeup.
 
 ```
 docs/                          Arsitektur, integration brief, rencana tim ini
@@ -56,101 +52,91 @@ writeup/                       Kaggle Writeup v0.5 (target 1500 kata)
 
 ### `github.com/NoesaaDecodes/nusasiaga`
 
-Repo dashboard Next.js. Dimiliki bersama. Noesaa pemilik utama; Listyantidewi push pekerjaan tambahan terkait flood/scenario.
+Repo dashboard Next.js.
 
 ```
 src/app/                       Next.js App Router (page.tsx, api/firms, api/analyze)
 src/components/shared/         AppHeader, Metric
 src/features/dashboard/        UnifiedDashboard + DashboardViewPicker
 src/features/wildfire/         WildfireView (composing komponen NASA FIRMS)
-src/features/flood/            Tab Flood/Earthquake/Industrial Fire + komponen-komponennya
+src/features/flood/            Komponen scenario flood/earthquake/industrial-fire
 src/features/maps/             Map NASA FIRMS (view wildfire)
 src/features/incidents/        Incident feed wildfire (dari MVP awal, dipertahankan)
 src/features/environment/      Statistik environment wildfire (dari MVP awal, dipertahankan)
 src/features/hazard-analysis/  AI Hazard Analyzer wildfire (dari MVP awal, dipertahankan)
 src/lib/                       Skenario, tipe, output synthesis, loader FIRMS
-notebooks/                     Notebook pipeline data FIRMS punya Noesaa
+notebooks/                     Notebook pipeline data FIRMS
 outputs/                       Output data FIRMS
 ```
 
 ## 5. Rencana hari per hari
 
-Tanggal mengasumsikan *kickoff* tanggal 2026-05-13. Sesuaikan kalau pekerjaan jadi lebih cepat (dan memang lebih cepat).
+Setiap hari adalah daftar tugas datar. Siapa pun yang punya kapasitas ambil tugas berikutnya yang sudah tidak ter-block dan kerjakan. Tidak ada kolom kepemilikan — koordinasi di chat.
 
 ### Hari 1 — 13 Mei ✅ SELESAI
 
-- Scaffold repo, schemas, prompt, tiga skenario, logika routing
-- Notebook Kaggle/Colab jalan end-to-end di Gemma 4 E4B
-- Synthesis Scenario A diverifikasi: 5 priority zones, recommended actions berperingkat, validity flags
-- Integrasi NusaSiaga: dashboard dual-track, scenario picker
-- Scaffold domain Kotlin untuk Android
-- Writeup v0.5 (1573 kata; akan dipangkas ke 1500 di Hari 6)
+- [x] Scaffold repo, schemas, prompt, tiga skenario, logika routing
+- [x] Notebook Kaggle/Colab jalan end-to-end di Gemma 4 E4B
+- [x] Synthesis Scenario A diverifikasi: 5 priority zones, recommended actions berperingkat, validity flags
+- [x] Integrasi NusaSiaga: unified disaster-type picker, view wildfire + flood/earthquake/industrial-fire
+- [x] Scaffold domain Kotlin untuk Android
+- [x] Writeup v0.5 (1573 kata; akan dipangkas ke 1500 di Hari 6)
+- [x] Rencana tim dwibahasa (dokumen ini)
 
 ### Hari 2 — 14 Mei (hari ini)
 
-**Listyantidewi:**
-- Install Android Studio (selesai) ✅
-- Fork `google-ai-edge/gallery` ke `listyantidewi1/gallery`
-- Clone di Android Studio ke `D:\Projects\hackathon\gallery\Android\src`
-- Tunggu Gradle sync pertama (~15-30 menit)
-- Sambungkan HP test via USB, aktifkan USB debugging
-- Jalankan gallery (tanpa modifikasi) di HP; pastikan salah satu LLM tile bisa load model
-- Paste isi `synthesis_cache_scenario_a.txt` (cache Colab) ke chat supaya kita bisa identifikasi scenario mana isinya dan integrasikan ke dashboard
-
-**Noesaa:**
-- `git pull` `nusasiaga` main untuk dapat semua pekerjaan dual-track dan scenario flood
-- Jalankan `npm install && npm run dev` lokal untuk pastikan build sehat di hasil merge
-- Deploy NusaSiaga ke Vercel untuk URL Live Demo (free tier cukup)
-- Tulis URL Vercel di README supaya kita punya satu link Live Demo kanonik
-- Pastikan env var NASA FIRMS (`NASA_FIRMS_MAP_KEY`) sudah diset di pengaturan project Vercel
+- [ ] Fork `google-ai-edge/gallery` ke akun GitHub pribadi
+- [ ] Clone fork di Android Studio ke `D:\Projects\hackathon\gallery\Android\src`
+- [ ] Gradle sync pertama (~15-30 menit — biarkan jalan)
+- [ ] Sambungkan HP test via USB; aktifkan USB debugging
+- [ ] Jalankan gallery (tanpa modifikasi) di HP; pastikan salah satu LLM tile bisa load model
+- [ ] Paste isi `synthesis_cache_scenario_a.txt` (cache Colab) ke chat supaya scenario yang ter-cache bisa diidentifikasi dan diintegrasikan
+- [ ] `git pull` `nusasiaga` main untuk dapat semua pekerjaan unified-picker
+- [ ] Jalankan `npm install && npm run dev` lokal di dashboard untuk pastikan build sehat di hasil merge
+- [ ] Deploy NusaSiaga ke Vercel untuk URL Live Demo (free tier cukup)
+- [ ] Catat URL Vercel di README supaya kita punya satu link Live Demo kanonik
+- [ ] Set `NASA_FIRMS_MAP_KEY` di pengaturan project Vercel
 
 ### Hari 3 — 15 Mei
 
-**Listyantidewi:**
-- Drop empat file Kotlin `ai.grg.*` ke fork gallery di path package yang benar
-- Tambahkan `kotlinx-serialization-json` + plugin Gradle serialization ke `app/build.gradle.kts`
-- Ganti chat flow default gallery dengan single-button photo-capture → triage flow
-- Render `EdgeTriageReport` hasilnya sebagai result card
-- Pastikan Gemma 4 E2B berhasil di-download dan jalan di dalam app yang sudah dimodifikasi
-
-**Noesaa:**
-- Poles tampilan dashboard (tab wildfire masih ada teks "Gemma 3n" di Hazard Analyzer — update ke Gemma 4)
-- Tangkap screenshot kedua view dari Vercel deployment untuk editor video
-- Bantu nyusun storyboard video (`writeup/video_script_v1.md` di `gemma-disaster-grid`)
+- [ ] Drop empat file Kotlin `ai.grg.*` ke fork gallery di path package yang benar
+- [ ] Tambahkan `kotlinx-serialization-json` + plugin Gradle serialization ke `app/build.gradle.kts`
+- [ ] Ganti chat flow default gallery dengan single-button photo-capture → triage flow
+- [ ] Render `EdgeTriageReport` hasilnya sebagai result card dengan severity, hazards, immediate action, dan routing badge
+- [ ] Pastikan Gemma 4 E2B berhasil di-download dan jalan di dalam app yang sudah dimodifikasi
+- [ ] Update teks Hazard Analyzer di dashboard view wildfire: "Gemma 3n" → "Gemma 4"
+- [ ] Tangkap screenshot kedua view (Wildfire dan Flood) dari deployment Vercel untuk editor video
+- [ ] Draft storyboard video di `writeup/video_script_v1.md` (refine yang sudah ada dengan visual unified-picker)
 
 ### Hari 4 — 16 Mei (kuota Kaggle reset di hari ini)
 
-**Listyantidewi:**
-- Buka notebook di Kaggle (bukan Colab), jalankan di 2× T4 pakai `unsloth/gemma-4-31B-it`
-- Generate synthesis baru untuk Scenario A, B, C
-- Save setiap output sebagai file `synthesis-scenario-{a,b,c}.ts` masing-masing
-- Drop ke `nusasiaga/src/lib/`, update `scenarios.ts` untuk ubah B dan C dari "pending" ke "generated"
-- Push ke `nusasiaga` main; Vercel auto-rebuild
-
-**Noesaa:**
-- Setelah push Hari 4 masuk, ambil screenshot baru yang nunjukkin ketiga disaster type dengan dashboard operasional lengkap
-- Bantu syuting footage HP — responden ambil foto, triage muncul, dashboard ter-update
+- [ ] Buka notebook di Kaggle (bukan Colab), jalankan di 2× T4 pakai `unsloth/gemma-4-31B-it`
+- [ ] Generate synthesis baru untuk Scenario A, B, C
+- [ ] Save setiap output sebagai file `synthesis-scenario-{a,b,c}.ts` masing-masing
+- [ ] Drop ke `nusasiaga/src/lib/`, update `scenarios.ts` untuk ubah B dan C dari "pending" ke "generated"
+- [ ] Push ke `nusasiaga` main; Vercel auto-rebuild
+- [ ] Ambil screenshot baru yang nunjukkin ketiga disaster type dengan dashboard operasional lengkap
+- [ ] Mulai syuting footage HP — responden ambil foto, triage muncul di result card
 
 ### Hari 5 — 17 Mei
 
-- Syuting video 3 menit. Adegan:
+- [ ] Syuting video 3 menit. Adegan:
   1. B-roll bencana (footage gempa Cianjur atau banjir Jakarta, lisensi CC0 atau fair use)
   2. HP di tangan, toggle mode pesawat, ambil foto
   3. Result card EdgeTriageReport muncul di HP
   4. Dashboard nge-switch antara Wildfire / Flood / Earthquake / Industrial Fire
-  5. Beat arsitektur
-- Edit, voice-over, musik. Upload ke YouTube unlisted; share link di writeup.
-- Opsional: Unsloth LoRA fine-tune E2B dengan gambar bencana yang dikurasi (Listyantidewi)
-- Opsional: tambah scenario user-report wildfire (Listyantidewi atau Noesaa)
+  5. Beat arsitektur (E2B → 31B → dashboard)
+- [ ] Edit, voice-over, musik. Upload ke YouTube unlisted; share link di writeup
+- [ ] Opsional: Unsloth LoRA fine-tune E2B dengan gambar bencana yang dikurasi
+- [ ] Opsional: tambah scenario user-report wildfire (kebakaran lahan gambut Riau, ~10 laporan buatan tangan)
 
-### Hari 6 — 18 Mei (HARI SUBMISSION)
+### Hari 6 — 18 Mei · HARI SUBMISSION
 
-- Pangkas writeup dari 1573 jadi ≤1500 kata
-- Tambahkan URL Vercel, URL YouTube, URL GitHub, link file APK
-- Cover image: foto bersih dashboard dengan salah satu scenario terbuka
-- Dry run: buka form Kaggle writeup, paste semua, preview, lalu submit
-- **Deadline: 11:59 PM UTC, Senin 18 Mei 2026** = 06:59 WIB, Selasa 19 Mei 2026.
-- **Jangan submit di menit-menit terakhir.** Targetkan 6 jam sebelum deadline.
+- [ ] Pangkas writeup dari 1573 jadi ≤1500 kata
+- [ ] Tambahkan URL Vercel, URL YouTube, URL GitHub, link file APK
+- [ ] Cover image: foto bersih dashboard dengan salah satu scenario terbuka
+- [ ] Dry run: buka form Kaggle writeup, paste semua, preview, lalu submit
+- [ ] **Submit minimal 6 jam sebelum deadline (11:59 PM UTC, Senin 18 Mei).** Itu = 06:59 WIB, Selasa 19 Mei.
 
 ## 6. Deliverables submission (sesuai aturan Kaggle)
 
@@ -172,7 +158,7 @@ Pilih kategori **Impact Track / Global Resilience** saat bikin Writeup.
 - **Kalau ubah file yang dipakai bersama (schemas, prompts, scenarios), kasih tahu di chat atau commit message** supaya yang lain tahu harus pull.
 - **Jangan force-push ke main.** Kalau perlu re-write history, ngobrol dulu sama yang lain.
 - **Semua keputusan branding/arsitektur major dicatat di dokumen ini.** Update file ini setiap ada perubahan keputusan.
-- **Satu orang di dashboard pada satu waktu** untuk refactor komponen besar. Polishing paralel masih oke.
+- **Satu orang di dashboard pada satu waktu** untuk refactor komponen besar. Polishing kosmetik paralel masih oke.
 
 ## 8. Risiko kritis dan apa yang kita lakukan
 
@@ -180,8 +166,8 @@ Pilih kategori **Impact Track / Global Resilience** saat bikin Writeup.
 |---|---|
 | Download Gemma 4 E2B di Android gagal (terbentur HuggingFace OAuth) | Pakai model yang lebih kecil yang sudah pre-downloaded di gallery untuk demo flow; di writeup framing-nya "arsitektur sudah terbukti, bundle model menyusul" |
 | Run Kaggle 31B di Hari 4 gagal | Fallback ke output E4B dari Colab (kita sudah punya Scenario A) dan cantumkan di writeup |
-| Deploy Vercel gagal karena API key FIRMS | Set env var-nya; kalau masih bermasalah, set view wildfire ke fallback notebook-JSON (sudah diimplementasi) |
-| Video tidak selesai di Hari 5 | Potong jadi versi 90-detik yang fokus ke Flood tab synthesis + shot HP airplane-mode |
+| Deploy Vercel gagal karena API key FIRMS | Set env var-nya; kalau masih bermasalah, view wildfire otomatis fallback ke notebook-JSON |
+| Video tidak selesai di Hari 5 | Potong jadi versi 90-detik yang fokus ke dashboard Flood synthesis + shot HP airplane-mode |
 | Writeup melampaui 1500 kata | Pangkas contoh-contoh di Section 5 (Technical Challenges); pertahankan impact + arsitektur |
 
 ## 9. Quick reference
@@ -189,12 +175,12 @@ Pilih kategori **Impact Track / Global Resilience** saat bikin Writeup.
 - **URL Hackathon:** <https://www.kaggle.com/competitions/gemma-4-good-hackathon>
 - **Code repo (Python/Android/writeup):** <https://github.com/listyantidewi1/gemma-disaster-grid>
 - **Code repo (dashboard):** <https://github.com/NoesaaDecodes/nusasiaga>
-- **URL Live Demo:** (ditambahkan Hari 2 setelah Noesaa deploy ke Vercel)
+- **URL Live Demo:** (ditambahkan Hari 2 setelah deploy Vercel)
 - **URL Video:** (ditambahkan Hari 5 setelah upload)
 
-## 10. Pendiri
+## 10. Kontributor
 
-- **Listyantidewi** — listyantidewi@gmail.com — lead, mobile + on-device ML
-- **Noesaa Decodes** — noesaaerp@gmail.com — dashboard, pipeline data NASA FIRMS
+- listyantidewi@gmail.com
+- noesaaerp@gmail.com
 
 Yuk kita ship.
