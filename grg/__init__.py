@@ -16,6 +16,7 @@ from .schemas import (
     parse_edge_report,
     parse_synthesis,
     extract_json_from_model_output,
+    attempt_truncated_json_repair,
 )
 from .routing import (
     RoutingContext,
@@ -35,6 +36,7 @@ __all__ = [
     "parse_edge_report",
     "parse_synthesis",
     "extract_json_from_model_output",
+    "attempt_truncated_json_repair",
     "RoutingContext",
     "RoutingDecision",
     "decide_routing",

@@ -400,7 +400,7 @@ CELLS = [
             raw_output = synthesize(
                 SYNTHESIS_SYSTEM_PROMPT,
                 user_content,
-                max_new_tokens=4096,
+                max_new_tokens=6000,  # bumped from 4096; some runs hit the ceiling mid-JSON
                 stream=True,
             )
             elapsed = time.time() - t0
@@ -424,6 +424,7 @@ CELLS = [
 
     code("""
         import json as _json
+        from grg import attempt_truncated_json_repair
 
         # Schema field length limits we'll auto-trim if the model overshoots.
         # Permanent schema bumps live in grg/schemas.py; this is a defensive
@@ -442,34 +443,58 @@ CELLS = [
                     d[k] = v[: lim - 3] + "..."
             return d
 
+        def _try_parse(s: str):
+            \"\"\"Try parse_synthesis on a JSON string with autotrim.\"\"\"
+            try:
+                d = _json.loads(s)
+            except _json.JSONDecodeError as e:
+                return None, f"JSON decode error: {e}"
+            d = _autotrim(d)
+            return parse_synthesis(d)
+
         json_str = extract_json_from_model_output(raw_output)
+        repair_used = False
 
         if json_str is None:
-            print("FAIL: no balanced JSON object found in model output")
-            print("\\nLast 500 chars of raw output:")
-            print(raw_output[-500:])
-            synthesis = None
+            # Synthesis likely truncated by max_new_tokens before closing braces.
+            # Attempt best-effort repair: balance the open delimiters.
+            print("No balanced JSON found - attempting truncation repair...")
+            repaired = attempt_truncated_json_repair(raw_output)
+            if repaired is None:
+                print("FAIL: repair returned None (output too damaged).")
+                print("\\nLast 500 chars of raw output:")
+                print(raw_output[-500:])
+                synthesis = None
+                err = "no JSON"
+            else:
+                print(f"Repair produced {len(repaired):,} chars; attempting to parse.")
+                synthesis, err = _try_parse(repaired)
+                repair_used = True
         else:
-            try:
-                _data = _json.loads(json_str)
-                _data = _autotrim(_data)
-                synthesis, err = parse_synthesis(_data)
-            except _json.JSONDecodeError as e:
-                synthesis, err = None, f"JSON decode error: {e}"
+            synthesis, err = _try_parse(json_str)
 
-            if err:
-                print(f"FAIL: validation error\\n{err[:800]}")
+        if err:
+            print(f"FAIL: validation error\\n{err[:800]}")
+            if json_str:
                 print("\\nFirst 600 chars of extracted JSON:")
                 print(json_str[:600])
-            else:
-                print("OK — CommandCenterSynthesis validated against schema.")
-                print(f"  Reports:           {synthesis.report_count}")
-                print(f"  Primary type:      {synthesis.primary_disaster_classification.type} "
-                      f"(conf {synthesis.primary_disaster_classification.confidence:.2f})")
-                print(f"  Priority zones:    {len(synthesis.priority_zones)}")
-                print(f"  Hazards:           {len(synthesis.consolidated_hazards)}")
-                print(f"  Recommended acts:  {len(synthesis.recommended_actions)}")
-                print(f"  Validity flags:    {len(synthesis.report_validity_notes)}")
+        elif synthesis is not None:
+            tag = "(repaired from truncation)" if repair_used else ""
+            print(f"OK - CommandCenterSynthesis validated against schema. {tag}")
+            print(f"  Reports:           {synthesis.report_count}")
+            print(f"  Primary type:      {synthesis.primary_disaster_classification.type} "
+                  f"(conf {synthesis.primary_disaster_classification.confidence:.2f})")
+            print(f"  Priority zones:    {len(synthesis.priority_zones)}")
+            print(f"  Hazards:           {len(synthesis.consolidated_hazards)}")
+            print(f"  Recommended acts:  {len(synthesis.recommended_actions)}")
+            print(f"  Validity flags:    {len(synthesis.report_validity_notes)}")
+            if repair_used:
+                print()
+                print("NOTE: the original generation hit max_new_tokens before the")
+                print("model closed all JSON braces. The truncation was repaired by")
+                print("balancing open delimiters, so some trailing fields may be")
+                print("missing. Set FORCE_REGEN=True in the synthesis cell and")
+                print("re-run for a complete generation.")
     """),
 
     md("""

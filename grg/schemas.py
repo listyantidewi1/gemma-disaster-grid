@@ -183,6 +183,78 @@ def parse_synthesis(raw: str | dict) -> tuple[CommandCenterSynthesis | None, str
         return None, str(e)
 
 
+def attempt_truncated_json_repair(text: str) -> str | None:
+    """Best-effort repair of a JSON object whose closing braces were chopped off
+    by a `max_new_tokens` hit during generation.
+
+    Approach:
+      1. Find the first `{`; everything before is irrelevant.
+      2. Walk forward keeping a stack of open `{` / `[`, tracking string state.
+      3. Find the last position that is "safely" closeable - the last `,` `}`
+         or `]` outside any string.
+      4. Trim trailing partial-fragment after that point.
+      5. Append the right number of `}` / `]` characters to balance the stack.
+
+    Returns the repaired JSON string (which the caller should still pass through
+    `json.loads`), or None if the input is too damaged to recover.
+    """
+    start = text.find("{")
+    if start == -1:
+        return None
+
+    s = text[start:]
+
+    # Find the last position outside a string that ends a value (so we can trim
+    # any trailing partial fragment after it).
+    in_string = False
+    escape = False
+    last_safe = -1
+    for i, ch in enumerate(s):
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in ",}]":
+            last_safe = i
+
+    if last_safe == -1:
+        return None
+
+    trimmed = s[: last_safe + 1].rstrip().rstrip(",").rstrip()
+
+    # Walk trimmed to compute open delimiter stack.
+    in_string = False
+    escape = False
+    stack: list[str] = []
+    for ch in trimmed:
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch in "{[":
+            stack.append(ch)
+        elif ch in "}]":
+            if stack:
+                stack.pop()
+
+    closing = "".join("}" if o == "{" else "]" for o in reversed(stack))
+    return trimmed + closing
+
+
 def extract_json_from_model_output(text: str) -> str | None:
     """Strip a thinking trace and code fences to return just the final JSON object.
 
