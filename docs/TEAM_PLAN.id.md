@@ -2,175 +2,175 @@
 
 > *Versi Inggris: [`TEAM_PLAN.en.md`](TEAM_PLAN.en.md)*
 
-Satu sumber acuan utama bagi tim selama kita mengerjakan submission untuk Kaggle Gemma 4 Good Hackathon. **Baca dokumen ini sebelum melakukan `push` ke salah satu repo.** Sengaja ditulis panjang — kalau ada yang terasa diulang-ulang di bawah, itu disengaja. Mending kami ulangi daripada salah satu dari kita harus menebak-nebak.
+Dokumen ini merupakan sumber acuan utama bagi tim selama pengerjaan submission untuk Kaggle Gemma 4 Good Hackathon. **Mohon dibaca terlebih dahulu sebelum melakukan `push` ke salah satu repo.** Dokumen ini sengaja disusun secara lengkap — apabila terdapat informasi yang terkesan berulang di bagian-bagian berikutnya, hal tersebut disengaja agar tidak menimbulkan keraguan.
 
 ---
 
-## 1. Versi 60 detik
+## 1. Ringkasan 60 detik
 
-Kita lagi bangun **NusaSiaga · Gemma Rescue Grid**, platform intelijen bencana *offline-first* yang ditenagai Gemma 4. Ini satu produk dengan tiga tier yang berbagi satu kontrak JSON yang sama:
+Kita sedang membangun **NusaSiaga · Gemma Rescue Grid**, sebuah platform intelijen bencana *offline-first* yang ditenagai Gemma 4. Sistem ini merupakan satu produk dengan tiga tier yang berbagi satu kontrak JSON dari ujung ke ujung:
 
-1. **Aplikasi Android** yang menjalankan Gemma 4 E2B di HP. Responden lapangan ambil foto (opsional tambahkan voice note atau teks), dan model menghasilkan laporan triase bencana yang terstruktur dalam kurang dari lima detik. **Sepenuhnya offline. Tidak perlu internet.**
-2. **Notebook Kaggle** yang menjalankan Gemma 4 31B di cloud. Saat HP dapat sinyal, laporan yang ngantri di-sync ke sini untuk sintesis lintas laporan: priority zones, ranked actions, validity flags. Keluarga Gemma 4 yang sama, model lebih besar, reasoning lebih dalam.
-3. **Dashboard web** yang di-deploy di Vercel. Data yang sama, URL publik yang bisa diklik juri. Menampilkan wildfire (layer satelit NASA FIRMS langsung) dan skenario flood/quake/industrial-fire (output sintesis Gemma 4) di satu disaster-type picker yang terpadu.
+1. **Aplikasi Android** yang menjalankan Gemma 4 E2B pada perangkat. Responden lapangan mengambil foto (opsional disertai catatan suara atau teks), kemudian model menghasilkan laporan triase bencana yang terstruktur dalam waktu kurang dari lima detik. **Sepenuhnya offline. Tidak memerlukan koneksi internet.**
+2. **Notebook Kaggle** yang menjalankan Gemma 4 31B di cloud. Pada saat perangkat memperoleh konektivitas, laporan-laporan yang berada di antrean disinkronisasi ke sini untuk proses sintesis lintas laporan: priority zones, ranked actions, dan validity flags. Keluarga model Gemma 4 yang sama, dengan ukuran lebih besar dan kapasitas reasoning yang lebih mendalam.
+3. **Dashboard web** yang di-deploy di Vercel. Data yang sama, URL publik yang dapat diakses oleh juri. Menampilkan wildfire (lapisan satelit NASA FIRMS secara langsung) dan skenario flood/quake/industrial-fire (output sintesis Gemma 4) dalam satu disaster-type picker yang terpadu.
 
-Kita submit ke **Kaggle Gemma 4 Good Hackathon** di track **Impact / Global Resilience**, dengan **Cactus Prize** ditumpuk di atasnya. Deadline: **Senin 18 Mei 2026, 11:59 PM UTC**. Video memegang sekitar **70% nilai** — alokasikan effort sesuai itu.
+Kita melakukan submission ke **Kaggle Gemma 4 Good Hackathon** di track **Impact / Global Resilience**, dengan **Cactus Prize** sebagai prize tambahan yang ditumpuk di atasnya. Deadline: **Senin, 18 Mei 2026, pukul 11:59 PM UTC**. Bobot video adalah sekitar **70% dari total nilai** — alokasikan effort sesuai dengan proporsi tersebut.
 
-Kalau cuma sempat baca satu bagian, baca ini.
-
----
-
-## 2. Masalah yang sedang kita selesaikan
-
-Saat bencana terjadi — gempa 5,6 di Cianjur, banjir bandang di Jakarta Pusat, kebakaran lahan gambut di Riau — satu jam pertama adalah yang paling mematikan. Itu juga jam dengan konektivitas paling buruk. Menara seluler ambruk. Bandwidth jebol. Informasi yang sampai ke koordinator darurat datang dalam bentuk lima puluh pesan WhatsApp yang tidak sinkron, foto buram dari HP yang gemetar, dan deskripsi yang diteriakkan lewat radio. Tim bantuan menghabiskan jam pertama yang kritis itu cuma untuk membaca.
-
-Tools AI bencana yang ada gagal tepat di momen ini karena (a) butuh koneksi cloud yang stabil untuk berfungsi, atau (b) chatbot teks-only yang tidak bisa membaca foto jalanan yang banjir.
-
-Gemma 4 adalah keluarga model open pertama yang dirancang untuk menjawab kedua ujung masalah ini sekaligus: varian on-device 2,3 miliar parameter efektif yang berjalan sepenuhnya di HP via Google AI Edge LiteRT, plus varian cloud 31 miliar parameter untuk reasoning lintas laporan yang serius. **Keluarga yang sama, kontrak JSON yang sama, prompt yang sama bekerja di kedua skala.** Itu insight teknis yang membuat proyek ini layak dikerjakan.
+Apabila hanya tersedia waktu untuk membaca satu bagian, bagian ini adalah yang paling penting.
 
 ---
 
-## 3. Tentang hackathon-nya
+## 2. Permasalahan yang sedang diselesaikan
 
-**[The Gemma 4 Good Hackathon](https://www.kaggle.com/competitions/gemma-4-good-hackathon)** di Kaggle. Deadline submission final **Senin 18 Mei 2026, 11:59 PM UTC** — itu **Selasa 19 Mei 2026, 06:59 WIB** di Jakarta. **Jangan submit di menit-menit terakhir.** Targetkan submit minimal enam jam sebelum deadline.
+Pada saat bencana terjadi — gempa magnitudo 5,6 di Cianjur, banjir bandang di Jakarta Pusat, kebakaran lahan gambut di Riau — satu jam pertama merupakan periode paling mematikan. Periode tersebut sekaligus merupakan jam dengan kondisi konektivitas terburuk. Menara seluler rubuh. Bandwidth terputus. Informasi yang sampai kepada koordinator darurat tiba dalam bentuk lima puluh pesan WhatsApp yang tidak tersinkronisasi, foto buram dari perangkat yang bergetar, serta deskripsi yang disampaikan melalui radio dengan kondisi terdesak. Tim bantuan menghabiskan jam pertama yang sangat kritis hanya untuk membaca informasi tersebut.
 
-### Prize yang kita target
+Perangkat AI bencana yang tersedia saat ini gagal tepat pada momen ini karena (a) memerlukan koneksi cloud yang stabil untuk dapat berfungsi, atau (b) merupakan chatbot berbasis teks yang tidak mampu membaca foto jalanan yang terendam banjir.
 
-- **Impact / Global Resilience — $10.000 (utama).** Deskripsi track-nya menyebut "offline, edge-based disaster response to long-range climate mitigation." Sistem kita persis itu. Ini track yang paling defensible buat kita.
-- **Special Tech / Cactus — $10.000 (bisa ditumpuk).** "Aplikasi mobile/wearable lokal-first terbaik yang secara cerdas merutekan tugas antar model." Arsitektur hybrid E2B-on-phone + 31B-in-cloud kita, dengan model on-device melakukan self-assessment lane mana yang harus dijalanin tiap laporan, adalah contoh paling kanonik.
-- **Main Track — $10.000 sampai $50.000 (ambisi tertinggi).** Diberikan ke proyek terbaik secara keseluruhan. Hanya kena kalau eksekusi top-tier. Jangan diandalkan, tapi juga jangan sengaja main aman.
+Gemma 4 merupakan keluarga model *open* pertama yang dirancang untuk menjawab kedua ujung permasalahan ini secara bersamaan: varian on-device 2,3 miliar parameter efektif yang berjalan sepenuhnya pada perangkat melalui Google AI Edge LiteRT, dan varian cloud 31 miliar parameter untuk reasoning lintas laporan yang lebih mendalam. **Keluarga model yang sama, kontrak JSON yang sama, prompt yang sama dapat dijalankan pada kedua skala tersebut.** Hal inilah yang menjadi landasan teknis bagi keberadaan proyek ini.
 
-Prize Special Tech dan Main Track bisa ditumpuk. Impact Track adalah pool tersendiri. Skenario terburuk: kita dapat Impact Track saja ($10K). Skenario kuat: kita tumpuk Impact + Cactus ($20K). Skenario mimpi: tambah penempatan Main Track di atasnya ($30K – $60K).
+---
 
-### Bagaimana kita dinilai
+## 3. Mengenai hackathon
 
-Tiga kriteria, total 100 poin:
+**[The Gemma 4 Good Hackathon](https://www.kaggle.com/competitions/gemma-4-good-hackathon)** yang diselenggarakan di Kaggle. Deadline submission final pada **Senin, 18 Mei 2026, pukul 11:59 PM UTC** — atau bertepatan dengan **Selasa, 19 Mei 2026, pukul 06:59 WIB** di Jakarta. **Mohon untuk tidak melakukan submission di menit-menit terakhir.** Targetkan submission paling lambat enam jam sebelum deadline.
 
-- **40 poin · Impact & Vision.** Diukur dari video. Apakah proyek mengangkat masalah dunia-nyata yang signifikan? Apakah visinya menginspirasi?
-- **30 poin · Video Pitch & Storytelling.** Sebagus apa produksi video-nya?
+### Prize yang ditargetkan
+
+- **Impact / Global Resilience — $10.000 (target utama).** Deskripsi track ini menyebutkan secara eksplisit "offline, edge-based disaster response to long-range climate mitigation." Sistem yang kita bangun persis sesuai dengan deskripsi tersebut. Track ini merupakan track yang paling defensible bagi proyek kita.
+- **Special Tech / Cactus — $10.000 (dapat ditumpuk).** Deskripsinya adalah "aplikasi mobile atau wearable lokal-first terbaik yang secara cerdas merutekan tugas antar model." Arsitektur hybrid E2B-on-phone + 31B-in-cloud kita, dengan model on-device yang melakukan self-assessment untuk menentukan lane mana yang harus dilalui oleh setiap laporan, merupakan contoh kanonik untuk kategori ini.
+- **Main Track — $10.000 hingga $50.000 (target ambisius).** Diberikan kepada proyek terbaik secara keseluruhan. Hanya akan tercapai apabila eksekusi berada pada tingkat tertinggi. Tidak perlu terlalu diandalkan, namun juga tidak perlu ditargetkan secara konservatif.
+
+Prize Special Tech dan Main Track dapat ditumpuk. Impact Track merupakan pool tersendiri. Pada skenario terburuk, kita memperoleh Impact Track saja ($10K). Pada skenario yang kuat, kita menumpuk Impact + Cactus ($20K). Pada skenario terbaik, kita menambahkan penempatan Main Track di atasnya ($30K – $60K).
+
+### Kriteria penilaian
+
+Tiga kriteria dengan total 100 poin:
+
+- **40 poin · Impact & Vision.** Diukur berdasarkan video. Apakah proyek mengangkat permasalahan dunia nyata yang signifikan? Apakah visi yang ditawarkan menginspirasi?
+- **30 poin · Video Pitch & Storytelling.** Seberapa baik kualitas produksi video?
 - **30 poin · Technical Depth & Execution.** Diverifikasi dari code repository dan writeup.
 
-Artinya **70 poin (70%) ditentukan oleh video 3 menit** dan 30 poin oleh code dan writeup. Implikasinya brutal: tidak peduli sebagus apa engineering-nya, kalau video-nya tidak menyampaikan dengan baik, nilai-nya tetap turun. Plan accordingly.
+Hal ini berarti **70 poin (70%) ditentukan oleh video berdurasi 3 menit** dan 30 poin oleh code dan writeup. Implikasinya bersifat tegas: tidak peduli seberapa baik kualitas engineering yang dilakukan, apabila video tidak mampu mengomunikasikannya dengan baik, perolehan nilai akan tetap menurun. Mohon merencanakan alokasi waktu dengan mempertimbangkan hal tersebut.
 
 ---
 
-## 4. Konsep kunci (glossary)
+## 4. Konsep kunci (glosarium)
 
-Kalau ketemu salah satu istilah ini di dokumentasi atau kode kita dan bingung artinya, section ini jawabannya.
+Apabila menemukan salah satu istilah berikut di dokumentasi maupun kode dan terdapat keraguan terhadap maknanya, bagian ini menyediakan jawabannya.
 
 ### `EdgeTriageReport`
 
-Objek JSON terstruktur yang dihasilkan Gemma 4 E2B on-device dari satu foto. Field-nya: `disaster_type` (flood, fire, earthquake, dll.), `severity` (1-5), `severity_rationale` (satu kalimat alasan), `hazards_visible` (array bahaya yang terlihat), `people_visible` (hitungan dewasa, anak, lansia, terluka, terjebak), `immediate_action` (satu tindakan paling penting dalam 10 menit ke depan), dan `evacuation_priority` (immediate, urgent, standby, none). Plus `routing_recommendation` dari model on-device sendiri (fast_lane atau deep_lane). Setiap laporan punya UUID dan timestamp ISO.
+Objek JSON terstruktur yang dihasilkan oleh Gemma 4 E2B on-device dari satu foto. Field-nya antara lain: `disaster_type` (flood, fire, earthquake, dan sebagainya), `severity` (skala 1-5), `severity_rationale` (satu kalimat yang menjelaskan alasan skor tersebut), `hazards_visible` (array bahaya yang terlihat), `people_visible` (jumlah orang dewasa, anak-anak, lansia, korban luka, dan korban terjebak), `immediate_action` (satu tindakan paling penting yang harus dilakukan dalam 10 menit ke depan), serta `evacuation_priority` (immediate, urgent, standby, none). Tersedia pula `routing_recommendation` yang ditentukan oleh model on-device itu sendiri (fast_lane atau deep_lane). Setiap laporan disertai UUID dan timestamp dalam format ISO.
 
-Kita punya 35 EdgeTriageReports buatan tangan di tiga skenario yang tersimpan di `data/synthesis_scenarios/` di repo Python dan `src/lib/scenario_*.json` di repo dashboard. Ini yang kita umpankan ke model sintesis.
+Saat ini terdapat 35 EdgeTriageReports yang disusun secara manual dalam tiga skenario, tersimpan di `data/synthesis_scenarios/` di repo Python dan di `src/lib/scenario_*.json` di repo dashboard. Inilah yang menjadi input bagi model sintesis.
 
 ### `CommandCenterSynthesis`
 
-Objek JSON terstruktur yang dihasilkan Gemma 4 31B di cloud saat menelan *array* EdgeTriageReports. Field-nya: `primary_disaster_classification`, `geographic_scope`, `severity_distribution`, `estimated_affected` (range jumlah orang yang terdampak), `priority_zones` (cluster laporan di area yang sama, di-rank berdasarkan severity), `consolidated_hazards` (agregasi lintas laporan), `recommended_actions` (di-rank berdasarkan life-safety priority), dan `report_validity_notes` (flagging duplikasi, konflik, gambar kualitas rendah, atau laporan yang saling mengkorroborasi).
+Objek JSON terstruktur yang dihasilkan oleh Gemma 4 31B di sisi cloud ketika menerima sebuah *array* yang terdiri dari beberapa EdgeTriageReports. Field-nya mencakup: `primary_disaster_classification`, `geographic_scope`, `severity_distribution`, `estimated_affected` (rentang jumlah orang yang terdampak), `priority_zones` (cluster laporan di area yang sama, diperingkat berdasarkan severity), `consolidated_hazards` (agregasi lintas laporan), `recommended_actions` (diperingkat berdasarkan prioritas life-safety), serta `report_validity_notes` (yang menandai duplikasi, konflik, gambar berkualitas rendah, atau laporan yang saling mengonfirmasi).
 
-Inilah yang dirender dashboard untuk tiap skenario flood/quake/industrial-fire.
+Output inilah yang dirender oleh dashboard untuk setiap skenario flood/quake/industrial-fire.
 
-### Intelligent routing (hook Cactus Prize)
+### Intelligent routing (hook untuk Cactus Prize)
 
-Setiap EdgeTriageReport bawa field `routing_recommendation` — `fast_lane` atau `deep_lane` — yang ditentukan oleh model on-device berdasarkan confidence-nya sendiri dan severity yang dia observasi. Application layer kemudian *menumpuk di atas* konteks deterministik yang model tidak bisa lihat: berapa laporan lain yang sudah masuk dari area ini dalam satu jam terakhir, status konektivitas saat ini, depth queue, baterai. Keputusan gabungan itulah *intelligent routing* yang dihargai oleh deskripsi Cactus Prize.
+Setiap EdgeTriageReport membawa field `routing_recommendation` — bernilai `fast_lane` atau `deep_lane` — yang ditentukan oleh model on-device berdasarkan tingkat confidence-nya sendiri dan severity yang diobservasi. Application layer kemudian *menambahkan di atasnya* konteks deterministik yang tidak dapat dilihat oleh model: berapa banyak laporan lain yang telah masuk dari area yang sama dalam satu jam terakhir, status konektivitas saat ini, kedalaman queue, dan level baterai. Keputusan gabungan itulah yang merupakan *intelligent routing* sebagaimana yang dihargai oleh deskripsi Cactus Prize.
 
-Poin utamanya: routing bukan rules engine sederhana. Model memutuskan untuk kasus yang dia pahami; aplikasi yang melakukan eskalasi untuk edge case yang model tidak mungkin tahu (konteks lintas laporan). Kedua keputusan terlihat di layar supaya juri bisa melihatnya.
+Poin pentingnya: mekanisme routing bukan sekadar rules engine. Model memutuskan untuk kasus yang dipahaminya; aplikasi melakukan eskalasi untuk edge case yang tidak mungkin diketahui oleh model (konteks lintas laporan). Kedua keputusan ini ditampilkan di layar sehingga juri dapat melihatnya secara langsung.
 
 ### Skenario
 
-Tiga skenario bencana buatan tangan yang dipakai untuk men-demo synthesis tier. Setiap skenario adalah file JSON berisi array EdgeTriageReports plus metadata.
+Tiga skenario bencana yang disusun secara manual untuk mendemonstrasikan synthesis tier. Setiap skenario merupakan file JSON yang berisi array EdgeTriageReports beserta metadata.
 
-- **Scenario A — Banjir bandang Jakarta Pusat.** 12 laporan dalam jendela 90 menit. Multiple priority zones, hazard electrical yang berulang di air banjir, satu lansia perempuan terjebak di atap, satu kemungkinan pengendara motor terjebak di underpass yang terendam. Kasus tingkat menengah. **Synthesis sudah diverifikasi di Gemma 4 E4B (Colab) di Hari 1.**
-- **Scenario B — Simulasi gempa dangkal Cianjur.** 15 laporan dalam dua jam. Tiga insiden severity-5 termasuk bangunan ambruk pancake-collapse dengan korban terjebak terkonfirmasi, kubah masjid ambruk dengan secondary failure menara, evakuasi rumah sakit, kebocoran gas di pasar, halaman sekolah dengan 30 anak, dan satu laporan yang sengaja dibuat ambigu dengan confidence rendah. Kasus paling sulit. **Synthesis menunggu Hari 4 Kaggle 31B.**
-- **Scenario C — Compound banjir + kebakaran industrial.** 8 laporan dalam 60 menit. Responden yang berbeda sengaja mengklasifikasi area yang sama secara berbeda (fire vs flood vs building collapse). Synthesis harus menghasilkan klasifikasi compound yang koheren. Termasuk ambulans yang terjebak dengan paramedis di atapnya, dan kelompok di atap gudang dengan satu pekerja lansia. **Synthesis menunggu Hari 4 Kaggle 31B.**
+- **Scenario A — Banjir rapid-onset Jakarta Pusat.** 12 laporan dalam jendela waktu 90 menit. Multiple priority zones, hazard electrical yang berulang di air banjir, satu orang lansia perempuan yang terjebak di atap rumah, satu kemungkinan pengendara motor yang terjebak di underpass yang terendam. Kasus dengan tingkat kesulitan menengah. **Sintesis telah diverifikasi pada Gemma 4 E4B (Colab) pada Hari 1.**
+- **Scenario B — Simulasi gempa dangkal Cianjur.** 15 laporan dalam waktu dua jam. Tiga insiden severity-5 yang mencakup bangunan yang mengalami pancake-collapse dengan korban terjebak yang terkonfirmasi, kubah masjid yang rubuh dengan secondary failure pada menara, evakuasi rumah sakit, kebocoran gas di pasar, halaman sekolah berisi 30 anak, serta satu laporan yang sengaja dibuat ambigu dengan confidence rendah. Kasus tersulit. **Sintesis menunggu pelaksanaan pada Hari 4 melalui Kaggle 31B.**
+- **Scenario C — Compound banjir + kebakaran industrial.** 8 laporan dalam waktu 60 menit. Responden yang berbeda secara sengaja melakukan klasifikasi berbeda terhadap area yang sama (fire vs flood vs building collapse). Sintesis harus mampu menghasilkan klasifikasi compound yang koheren. Termasuk di dalamnya ambulans yang terjebak dengan paramedis di atapnya, serta kelompok di atap gudang yang menyertakan satu pekerja lansia. **Sintesis menunggu pelaksanaan pada Hari 4 melalui Kaggle 31B.**
 
 ### View Wildfire (NASA FIRMS)
 
-Layer terpisah di dashboard yang menampilkan hotspot kebakaran hutan yang dideteksi satelit di seluruh Indonesia secara live, di-refresh tiap 30 menit dari API NASA FIRMS VIIRS. **Bukan dari Gemma 4.** Ini intelijen pasif (satelit) versus intelijen aktif kita (EdgeTriageReports yang di-submit user). Keduanya saling melengkapi untuk situational awareness, diakses lewat disaster-type picker terpadu yang sama.
+Layer terpisah pada dashboard yang menampilkan hotspot kebakaran hutan yang terdeteksi satelit di seluruh wilayah Indonesia secara langsung, di-refresh setiap 30 menit dari API NASA FIRMS VIIRS. **Bukan berasal dari Gemma 4.** Ini merupakan intelijen pasif (satelit) sebagai komplemen terhadap intelijen aktif kita (EdgeTriageReports yang di-submit oleh pengguna). Keduanya saling melengkapi untuk membentuk situational awareness, diakses melalui disaster-type picker terpadu yang sama.
 
-View wildfire sudah ada di NusaSiaga sebelum pekerjaan Gemma 4 dimulai dan dipertahankan sepenuhnya — tidak ada komponennya yang dimodifikasi atau dihapus saat integrasi.
+View wildfire telah tersedia di NusaSiaga sebelum pekerjaan Gemma 4 dimulai dan dipertahankan sepenuhnya — tidak ada satupun komponennya yang dimodifikasi atau dihapus selama proses integrasi.
 
 ---
 
-## 5. Kenapa kita memilih pilihan-pilihan ini
+## 5. Alasan pemilihan keputusan-keputusan spesifik ini
 
-Keputusan arsitektural, kalau-kalau ada yang penasaran.
+Keputusan arsitektural berikut disertakan sebagai informasi untuk konteks.
 
-**Kenapa Gemma 4 bukan Gemma 3n.** Hackathon-nya spesifik tentang Gemma 4. Gemma 3n memang ada untuk on-device, tapi Gemma 4 punya varian on-device yang setara (E2B / E4B) plus varian 31B yang lebih besar untuk cloud reasoning, dan varian cloud-nya berbagi arsitektur dengan varian on-device. Kita dapat stack vertikal lengkap dari satu keluarga.
+**Mengapa Gemma 4, bukan Gemma 3n.** Hackathon ini secara spesifik berfokus pada Gemma 4. Gemma 3n memang tersedia untuk penggunaan on-device, namun Gemma 4 memiliki varian on-device yang setara (E2B / E4B) ditambah dengan varian 31B yang lebih besar untuk cloud reasoning, dan varian cloud-nya berbagi arsitektur dengan varian on-device. Hal ini memberikan stack vertikal yang lengkap dari satu keluarga model.
 
-**Kenapa E2B untuk edge.** Ini varian Gemma 4 terkecil dengan multimodal native (gambar + audio + teks) dan jalan di sekitar 1,5 GB memori dengan kuantisasi INT4 di HP Android kelas menengah. E4B yang lebih besar akan kasih kualitas lebih bagus tapi makan lebih banyak memori dan baterai. Untuk demo kita butuh kecepatan dan reliabilitas.
+**Mengapa E2B untuk tier edge.** Merupakan varian Gemma 4 terkecil dengan multimodal native (gambar + audio + teks) dan dapat berjalan dengan konsumsi memori sekitar 1,5 GB dengan kuantisasi INT4 pada perangkat Android kelas menengah. E4B yang lebih besar akan memberikan kualitas yang lebih baik namun mengonsumsi memori dan baterai yang lebih banyak. Untuk keperluan demo, prioritas kita adalah kecepatan dan reliabilitas.
 
-**Kenapa 31B untuk cloud.** Ini flagship dense dalam keluarga Gemma 4. Alternatif 26B MoE lebih cepat tapi reasoning 31B lebih tajam, dan itu penting saat mensintesis 12+ laporan yang bisa saling bertentangan. Kita jalanin di 4-bit-quantization via Unsloth di setup 2× T4 Kaggle, hardware yang sama yang juri punya akses ke sana.
+**Mengapa 31B untuk tier cloud.** Merupakan flagship dense dalam keluarga Gemma 4. Alternatif 26B MoE memang lebih cepat, namun reasoning 31B lebih tajam, dan ketajaman tersebut menjadi sangat penting ketika mensintesis 12 laporan atau lebih yang dapat saling bertentangan. Model ini dijalankan dengan kuantisasi 4-bit melalui Unsloth pada setup 2× T4 di Kaggle, yang merupakan hardware yang sama yang dapat diakses oleh juri.
 
-**Kenapa LiteRT di Android.** Google AI Edge LiteRT (sebelumnya TensorFlow Lite untuk LLM) adalah jalur deployment resmi untuk Gemma 4 on-device. Ada juga Special Tech LiteRT Prize tapi kita cuma bisa menang satu Special Tech prize, dan Cactus lebih cocok dengan cerita arsitektur kita.
+**Mengapa LiteRT untuk Android.** Google AI Edge LiteRT (sebelumnya bernama TensorFlow Lite for LLMs) merupakan jalur deployment resmi untuk Gemma 4 di sisi on-device. Tersedia pula Special Tech LiteRT Prize, namun kita hanya dapat memenangkan satu Special Tech prize, dan Cactus memiliki kesesuaian yang lebih baik dengan narasi arsitektur kita.
 
-**Kenapa synthesis di-pre-bake di dashboard, bukan panggil AI live.** Dua alasan. Pertama, juri yang klik URL live demo harus melihat hasilnya seketika, bukan nunggu menitan untuk model selesai. Kedua, JSON synthesis itu sendiri yang ingin kita ditampilkan untuk dievaluasi — kualitas reasoning model, clustering priority zone, validity flag — dan artefak itu statis, identik untuk setiap viewer. Live AI call cuma akan menambah varians tanpa menambah nilai.
+**Mengapa sintesis di-pre-bake pada dashboard, bukan dipanggil secara live.** Terdapat dua alasan. Pertama, juri yang mengakses URL live demo seharusnya melihat hasilnya secara seketika, bukan menunggu beberapa menit untuk model menyelesaikan eksekusi. Kedua, JSON sintesis itu sendiri yang merupakan artefak yang ingin kita biarkan untuk dievaluasi — kualitas reasoning model, clustering priority zone, dan validity flag — dan artefak tersebut bersifat statis, identik untuk setiap viewer. Pemanggilan AI secara live hanya akan menambah varians tanpa menambah nilai.
 
-**Kenapa dua repo, bukan satu monorepo.** Kecelakaan sejarah ditambah pemisahan praktis. Dashboard sudah jadi repo terpisah saat kita mulai gabungkan kerja. Daripada melawan git history, kita biarkan terpisah dan link keduanya di writeup. Jangka panjang mungkin kita merge; untuk hackathon, tidak worth churn-nya.
+**Mengapa dua repo terpisah, bukan satu monorepo.** Hal ini merupakan kombinasi antara historical accident dan pemisahan praktis. Dashboard telah eksis sebagai repo terpisah ketika pekerjaan kita mulai digabungkan. Daripada melawan git history, kita memilih untuk membiarkan keduanya tetap terpisah dan menghubungkan keduanya pada writeup. Untuk jangka panjang dapat dilakukan merge; namun untuk keperluan hackathon, hal tersebut tidak sebanding dengan churn-nya.
 
-**Kenapa Vercel.** Free tier, deploy langsung dari GitHub, dukung Next.js 16 + server components secara native. Requirement Live Demo di aturan Kaggle adalah "URL atau file... bisa diakses publik, tanpa login atau paywall" — Vercel kasih itu dalam satu klik.
+**Mengapa Vercel.** Tersedia free tier, deployment langsung dari GitHub, dan dukungan native untuk Next.js 16 + server components. Requirement Live Demo pada aturan Kaggle adalah "URL atau file... dapat diakses publik, tanpa login atau paywall" — Vercel menyediakannya hanya dengan satu klik.
 
 ---
 
 ## 6. Walkthrough dashboard
 
-Saat juri atau koordinator buka URL yang di-deploy, inilah yang mereka lihat:
+Pada saat juri atau koordinator membuka URL yang telah di-deploy, berikut adalah tampilan yang akan dilihat:
 
-**Di paling atas:** brand header "NusaSiaga · Gemma Rescue Grid" dengan subtitle "Wildfire monitoring · Offline-edge flood response · Powered by Gemma 4" dan badge "Offline-First Demo".
+**Di bagian paling atas:** brand header bertuliskan "NusaSiaga · Gemma Rescue Grid" dengan subtitle "Wildfire monitoring · Offline-edge flood response · Powered by Gemma 4" serta badge "Offline-First Demo".
 
-**Tepat di bawahnya:** satu disaster-type picker terpadu (kartu dropdown). Default ke "Flood" — skenario yang synthesis-nya sudah siap. Klik untuk expand jadi empat opsi:
+**Tepat di bawahnya:** satu disaster-type picker yang terpadu (berupa kartu dropdown). Picker ini memiliki nilai default "Flood" — skenario yang sintesisnya telah siap. Apabila diklik, akan ter-expand menjadi empat opsi:
 
-- 🔥 **Wildfire** — Live NASA FIRMS satellite hotspots di Indonesia
-- 🌊 **Flood** — Banjir Jakarta Pusat · 12 laporan, synthesis lengkap
-- 🏚️ **Earthquake** — Simulasi gempa dangkal Cianjur · 15 laporan, synthesis pending
-- ⚡ **Industrial Fire** — Banjir + kebakaran transformator di zona industri · 8 laporan, synthesis pending
+- 🔥 **Wildfire** — Live NASA FIRMS satellite hotspots di seluruh Indonesia
+- 🌊 **Flood** — Banjir Jakarta Pusat · 12 laporan, sintesis lengkap
+- 🏚️ **Earthquake** — Simulasi gempa dangkal Cianjur · 15 laporan, sintesis pending
+- ⚡ **Industrial Fire** — Banjir + kebakaran transformator di zona industri · 8 laporan, sintesis pending
 
-Dan footer di dropdown yang menampilkan jenis bencana yang direncanakan (Volcanic, Tsunami, Landslide, Storm, Building Collapse) dengan pesan "Same Gemma 4 architecture · same JSON contract · just add a scenario file."
+Beserta footer di dropdown yang menampilkan jenis bencana yang direncanakan untuk ditambahkan (Volcanic, Tsunami, Landslide, Storm, Building Collapse) dengan pesan "Same Gemma 4 architecture · same JSON contract · just add a scenario file."
 
-**Di bawah picker**, isi body berubah tergantung view mana yang aktif.
+**Di bawah picker**, konten body berubah sesuai dengan view mana yang sedang aktif.
 
-Untuk **Wildfire**, body menampilkan komponen NusaSiaga asli: hero "Live Disaster Intelligence", panel AI Hazard Analyzer bertema wildfire, peta hotspot Indonesia dengan marker FRP-weighted, statistik environmental intelligence (AQI, arah angin, estimasi CO₂), incident feed wildfire, panel demo readiness, dan kartu deskripsi arsitektur. Ini data satelit NASA FIRMS, di-refresh tiap 30 menit.
+Untuk **Wildfire**, body menampilkan komponen NusaSiaga yang orisinal: hero "Live Disaster Intelligence", panel AI Hazard Analyzer bertema wildfire, peta hotspot Indonesia dengan marker FRP-weighted, statistik environmental intelligence (AQI, arah angin, estimasi CO₂), incident feed wildfire, panel demo readiness, serta kartu deskripsi arsitektur. Konten ini merupakan data satelit NASA FIRMS yang di-refresh setiap 30 menit.
 
-Untuk **Flood / Earthquake / Industrial Fire**, body menampilkan: block hero dengan tiga metrik (reports synthesized, severe count, people affected); kartu sample triage yang nampilin laporan paling severe dari skenario; peta Jakarta/Cianjur/zona-industri dengan marker yang di-color sesuai severity untuk setiap laporan; `CommandCenterSynthesis` lengkap di-render sebagai panel (bar distribusi severity, vulnerable groups, priority zones dengan hazard chips, recommended actions yang sudah di-rank, report validity flags, data confidence notes); grid statistik Operational Intelligence; daftar lengkap EdgeTriageReports sebagai kartu; dan kartu deskripsi arsitektur yang sama.
+Untuk **Flood / Earthquake / Industrial Fire**, body menampilkan: blok hero dengan tiga metrik (reports synthesized, severe count, people affected); kartu sample triage yang menampilkan laporan paling severe dari skenario tersebut; peta Jakarta/Cianjur/zona-industri dengan marker yang diwarnai sesuai severity untuk setiap laporan; `CommandCenterSynthesis` lengkap yang dirender sebagai panel (bar distribusi severity, vulnerable groups, priority zones dengan hazard chips, recommended actions yang diperingkat, report validity flags, data confidence notes); grid statistik Operational Intelligence; daftar lengkap EdgeTriageReports dalam bentuk kartu; serta kartu deskripsi arsitektur yang sama.
 
-Untuk skenario yang synthesis-nya masih pending (B dan C sampai Hari 4), panel synthesis dan grid statistik degrade dengan baik ke kartu "synthesis pending" sementara sisanya (peta, hero, reports feed) tetap render penuh.
+Untuk skenario yang sintesisnya masih dalam status pending (B dan C hingga Hari 4), panel sintesis dan grid statistik akan menurun secara graceful menjadi kartu "synthesis pending", sementara komponen lainnya (peta, hero, reports feed) tetap dirender sepenuhnya.
 
-Aesthetic-nya dark operational — background slate, aksen sky/emerald/red/orange, typography besar dan jelas. Didesain untuk di-screenshot buat video.
-
----
-
-## 7. Aplikasi Android, rencananya
-
-Di-fork dari `google-ai-edge/gallery`, yang sudah mengimplementasi loading model LiteRT, konstruksi prompt multimodal, dan flow kamera capture. Kita customize:
-
-- **Strip UI chat general-purpose dari gallery.** Ganti dengan satu screen capture foto satu-tombol.
-- **Embed system prompt kita.** Disematkan sebagai Kotlin `const` string di `ai.grg.EDGE_SYSTEM_PROMPT`.
-- **Pakai schema kita.** Output di-decode ke Kotlin data class `EdgeTriageReport` via kotlinx.serialization.
-- **Tambahkan routing decision.** Setelah menerima EdgeTriageReport, app menjalankan `decideRouting()` dan menampilkan badge fast-lane atau deep-lane.
-
-Empat file Kotlin drop-in tinggal di `android/app/src/main/kotlin/ai/grg/` di repo Python: `Schemas.kt`, `EdgeTriagePrompt.kt`, `Routing.kt`, dan `JsonExtraction.kt`. Mereka platform-agnostic dan plugin kotlinx.serialization adalah satu-satunya perubahan Gradle yang dibutuhkan.
-
-**Yang sengaja TIDAK kita bangun:** login, akun, fitur multi-user, map view di dalam app, push notifications, background sync, port iOS. Tidak ada dari ini yang berdampak ke demo dan semuanya akan curi waktu.
+Aesthetic yang digunakan adalah dark operational — latar belakang slate, aksen warna sky/emerald/red/orange, dengan typography yang besar dan jelas. Didesain untuk dapat di-screenshot dengan baik untuk keperluan video.
 
 ---
 
-## 8. Notebook Kaggle, apa yang dia lakukan
+## 7. Rencana aplikasi Android
 
-`notebook/gemma_rescue_grid.ipynb` — dibangun dari `build_notebook.py`, terstruktur sebagai 31 sel. Juri yang klik "Run all" jalan lewat:
+Di-fork dari `google-ai-edge/gallery`, yang telah mengimplementasikan loading model LiteRT, konstruksi prompt multimodal, dan flow camera capture. Modifikasi yang akan kita lakukan:
 
-1. Install dependencies (Unsloth, transformers pinned 5.5.0, pydantic)
+- **Menghapus UI chat general-purpose dari gallery.** Mengganti dengan satu screen capture foto satu-tombol.
+- **Embed system prompt kita.** Disematkan sebagai Kotlin `const` string pada `ai.grg.EDGE_SYSTEM_PROMPT`.
+- **Menggunakan schema kita.** Output di-decode ke Kotlin data class `EdgeTriageReport` melalui kotlinx.serialization.
+- **Menambahkan routing decision.** Setelah menerima EdgeTriageReport, aplikasi menjalankan `decideRouting()` dan menampilkan badge fast-lane atau deep-lane.
+
+Keempat file Kotlin yang bersifat drop-in tersedia di `android/app/src/main/kotlin/ai/grg/` di repo Python: `Schemas.kt`, `EdgeTriagePrompt.kt`, `Routing.kt`, dan `JsonExtraction.kt`. File-file tersebut bersifat platform-agnostic dan plugin kotlinx.serialization merupakan satu-satunya perubahan pada Gradle yang diperlukan.
+
+**Hal-hal yang secara sengaja TIDAK kita bangun:** login, akun pengguna, fitur multi-user, map view di dalam aplikasi, push notifications, background sync, port iOS. Tidak ada dari fitur tersebut yang berdampak pada demo, dan seluruhnya berpotensi mengonsumsi waktu pengerjaan.
+
+---
+
+## 8. Fungsi notebook Kaggle
+
+`notebook/gemma_rescue_grid.ipynb` — dibangun dari `build_notebook.py`, terstruktur dalam 31 sel. Juri yang mengeksekusi "Run all" akan melewati alur berikut:
+
+1. Instalasi dependencies (Unsloth, transformers di-pin pada versi 5.5.0, pydantic)
 2. Clone repo gemma-disaster-grid
-3. Load Gemma 4 via `FastModel.from_pretrained` Unsloth (satu variabel kontrol size — E4B buat Colab, 31B buat Kaggle final)
-4. Load prompt dan validator kita dari package `grg`
-5. Load 12 EdgeTriageReports Scenario A
-6. Jalankan synthesis prompt; stream reasoning trace `<|channel>thought` model plus JSON final
+3. Loading Gemma 4 melalui `FastModel.from_pretrained` dari Unsloth (satu variabel mengontrol ukuran model — E4B untuk Colab, 31B untuk Kaggle final)
+4. Loading prompt dan validator kita dari package `grg`
+5. Loading 12 EdgeTriageReports dari Scenario A
+6. Eksekusi synthesis prompt; streaming reasoning trace `<|channel>thought` dari model beserta JSON final
 7. Validasi terhadap schema Pydantic `CommandCenterSynthesis` (dengan autotrim defense dan truncation repair)
-8. Render dashboard operational-picture di notebook
-9. Inspect system prompt edge-tier dan satu EdgeTriageReport sampel
-10. Jalankan fungsi intelligent routing di setiap laporan; print tabel yang nunjukkin keputusan fast-lane vs deep-lane
-11. Switch ke Scenario B atau C dengan ubah satu variabel
+8. Render dashboard operational-picture di dalam notebook
+9. Inspeksi system prompt edge-tier dan satu EdgeTriageReport sebagai sampel
+10. Eksekusi fungsi intelligent routing pada setiap laporan; print tabel yang menunjukkan keputusan fast-lane vs deep-lane
+11. Perpindahan ke Scenario B atau C dengan mengubah satu variabel
 
-Notebook ini adalah artefak "proof of work" — engineering yang sebenarnya bisa juri jalankan.
+Notebook ini merupakan artefak "proof of work" — engineering yang sesungguhnya dapat dieksekusi oleh juri.
 
 ---
 
@@ -184,9 +184,9 @@ Repo Python / Android / writeup.
 docs/                          Arsitektur, integration brief, rencana tim ini
 prompts/                       System prompt Gemma 4 (edge + cloud)
 grg/                           Package Python: schemas, routing, JSON repair
-data/synthesis_scenarios/      Tiga skenario buatan tangan (A banjir, B gempa, C kompleks)
-notebook/                      Notebook Kaggle/Colab (dibuat via build_notebook.py)
-android/                       Scaffold domain Kotlin untuk app Android
+data/synthesis_scenarios/      Tiga skenario yang disusun manual (A banjir, B gempa, C kompleks)
+notebook/                      Notebook Kaggle/Colab (dibangun via build_notebook.py)
+android/                       Scaffold domain Kotlin untuk aplikasi Android
 writeup/                       Kaggle Writeup v0.5 (target 1500 kata)
 ```
 
@@ -213,141 +213,141 @@ outputs/                       Output data FIRMS
 
 ## 10. Catatan kecepatan
 
-Kita lagi jalan jauh lebih cepat dari jadwal manapun yang masuk akal — pekerjaan yang awalnya dianggarkan untuk Hari 1 dan Hari 2 sebagian besar sudah selesai dalam jam-jam pertama Hari 1. **Rencana hari per hari di bawah ini adalah anggaran, bukan batas bawah.** Banyak item yang tertulis untuk "hari ini" atau "besok" sudah selesai. Baca ulang checklist sesuai urutan untuk tahu apa yang sebenarnya tersisa.
+Saat ini kita berjalan jauh lebih cepat dari jadwal manapun yang masuk akal — pekerjaan yang semula dianggarkan untuk Hari 1 dan Hari 2 sebagian besar telah diselesaikan pada jam-jam pertama Hari 1. **Rencana hari per hari di bawah ini merupakan anggaran, bukan batas bawah.** Banyak item yang tertulis untuk "hari ini" atau "besok" telah diselesaikan. Mohon membaca ulang checklist secara berurutan untuk mengetahui apa saja yang sesungguhnya tersisa.
 
-Yang penting: paruh kedua timeline (syuting video, polishing writeup, deploy ke Vercel, bikin Android app benar-benar jalan di HP) lebih makan waktu dan lebih unpredictable daripada paruh pertama. **Jangan asumsikan sisa proyek akan kompres dengan cara yang sama.**
+Yang perlu diperhatikan: paruh kedua timeline (proses syuting video, finalisasi writeup, deployment ke Vercel, serta menjalankan aplikasi Android di perangkat fisik) memerlukan lebih banyak waktu dan lebih sulit diprediksi dibandingkan paruh pertama. **Mohon untuk tidak mengasumsikan bahwa sisa proyek akan terkompresi dengan cara yang sama.**
 
 ---
 
 ## 11. Rencana hari per hari
 
-Setiap hari punya rationale singkat yang menjelaskan *kenapa* hari ini kita kerjakan apa, diikuti checklist tugas datar. Siapa pun yang punya kapasitas ambil tugas berikutnya yang sudah tidak ter-block dan kerjakan. Tidak ada kolom kepemilikan — koordinasi di chat.
+Setiap hari disertai rationale singkat yang menjelaskan *mengapa* aktivitas tertentu dikerjakan pada hari tersebut, diikuti dengan checklist tugas yang bersifat flat. Siapa pun yang memiliki kapasitas dapat mengambil tugas berikutnya yang sudah tidak terblokir dan menyelesaikannya. Tidak terdapat kolom kepemilikan — koordinasi dilakukan melalui chat.
 
 ### Hari 1 — 13 Mei ✅ SELESAI
 
-*Hari pondasi. Bangun kontrak data, prompt, skenario, dan verifikasi tier synthesis jalan di model yang lebih kecil sebelum commit ke model lebih besar di Kaggle.*
+*Hari pondasi. Membangun kontrak data, prompt, skenario, dan memverifikasi bahwa synthesis tier berjalan pada model yang lebih kecil sebelum melakukan commit ke model yang lebih besar pada Kaggle.*
 
-- [x] Scaffold repo, schemas, prompt, tiga skenario, logika routing
-- [x] Notebook Kaggle/Colab jalan end-to-end di Gemma 4 E4B
-- [x] Synthesis Scenario A diverifikasi: 5 priority zones, recommended actions berperingkat, validity flags
+- [x] Scaffold repo, schemas, prompts, tiga skenario, logika routing
+- [x] Notebook Kaggle/Colab berjalan end-to-end pada Gemma 4 E4B
+- [x] Sintesis Scenario A telah diverifikasi: 5 priority zones, recommended actions yang diperingkat, validity flags
 - [x] Integrasi NusaSiaga: unified disaster-type picker, view wildfire + flood/earthquake/industrial-fire
 - [x] Scaffold domain Kotlin untuk Android
-- [x] Writeup v0.5 (1573 kata; akan dipangkas ke 1500 di Hari 6)
+- [x] Writeup v0.5 (1573 kata; akan dipangkas menjadi 1500 pada Hari 6)
 - [x] Rencana tim dwibahasa (dokumen ini)
 
 ### Hari 2 — 14 Mei (hari ini)
 
-*Hari set-up-semua-yang-fisik. Android Studio lagi download SDK 5+ GB; deploy Vercel butuh env var; HP test butuh USB debugging diaktifkan. Tidak satupun dari ini sulit secara intelektual, tapi semuanya harus terjadi sebelum Hari 3-5.*
+*Hari persiapan seluruh hal yang bersifat fisik. Android Studio sedang mengunduh SDK berukuran 5+ GB; proses deploy Vercel memerlukan env var; perangkat HP test memerlukan aktivasi USB debugging. Tidak ada di antara aktivitas ini yang sulit secara intelektual, namun seluruhnya harus diselesaikan sebelum Hari 3 hingga Hari 5.*
 
-- [ ] Fork `google-ai-edge/gallery` ke akun GitHub pribadi
-- [ ] Clone fork di Android Studio ke `D:\Projects\hackathon\gallery\Android\src`
-- [ ] Gradle sync pertama (~15-30 menit — biarkan jalan, jangan cancel)
-- [ ] Sambungkan HP test via USB; aktifkan USB debugging dari Developer Options
-- [ ] Jalankan gallery (tanpa modifikasi) di HP; pastikan salah satu LLM tile bisa load model (model apa saja — kita cuma butuh tahu inference jalan)
-- [ ] Paste isi `synthesis_cache_scenario_a.txt` (cache Colab) ke chat supaya kita bisa identifikasi scenario apa isinya dan integrasikan synthesis JSON itu ke dashboard
-- [ ] `git pull` `nusasiaga` main untuk dapat semua pekerjaan unified-picker dan scenario
-- [ ] Jalankan `npm install && npm run dev` lokal di dashboard untuk pastikan build sehat di hasil merge
-- [ ] Deploy NusaSiaga ke Vercel untuk URL Live Demo (free tier cukup; sign up pakai akun GitHub yang punya repo dashboard)
-- [ ] Catat URL Vercel di README supaya kita punya satu link Live Demo kanonik
-- [ ] Set `NASA_FIRMS_MAP_KEY` di pengaturan project Vercel (Settings → Environment Variables) supaya data live wildfire view jalan
+- [ ] Melakukan fork pada `google-ai-edge/gallery` ke akun GitHub pribadi
+- [ ] Clone fork tersebut di Android Studio ke direktori `D:\Projects\hackathon\gallery\Android\src`
+- [ ] Gradle sync pertama (~15-30 menit — biarkan proses berjalan, mohon untuk tidak membatalkan)
+- [ ] Menyambungkan perangkat HP test melalui USB; mengaktifkan USB debugging dari Developer Options
+- [ ] Menjalankan gallery (tanpa modifikasi) di HP; memastikan salah satu LLM tile dapat melakukan loading model (model apa pun — yang diperlukan adalah konfirmasi bahwa inference dapat berjalan)
+- [ ] Menyalin (paste) isi `synthesis_cache_scenario_a.txt` (cache Colab) ke chat agar dapat diidentifikasi skenario apa yang dimuat di dalamnya dan diintegrasikan synthesis JSON tersebut ke dashboard
+- [ ] Eksekusi `git pull` pada `nusasiaga` main untuk memperoleh seluruh pekerjaan terkait unified-picker dan scenario
+- [ ] Eksekusi `npm install && npm run dev` secara lokal pada dashboard untuk memastikan tree hasil merge dapat di-build tanpa error
+- [ ] Deploy NusaSiaga ke Vercel untuk memperoleh URL Live Demo (free tier mencukupi; daftar menggunakan akun GitHub pemilik repo dashboard)
+- [ ] Mencatat URL Vercel pada README agar tersedia satu link Live Demo yang kanonik
+- [ ] Mengatur `NASA_FIRMS_MAP_KEY` pada pengaturan project Vercel (Settings → Environment Variables) agar data live untuk view wildfire dapat berjalan
 
 ### Hari 3 — 15 Mei
 
-*Hari customization Android plus polishing dashboard. File domain Kotlin sudah ditulis; kita tinggal drop, wire inference loop pakai system prompt kita, dan ganti chat free-form gallery dengan flow capture satu-tombol.*
+*Hari kustomisasi Android disertai polishing dashboard. File domain Kotlin telah disiapkan; kita tinggal menambahkannya, menghubungkan inference loop agar menggunakan system prompt kita, dan mengganti chat free-form bawaan gallery dengan flow capture satu-tombol.*
 
-- [ ] Drop empat file Kotlin `ai.grg.*` ke fork gallery di path package yang benar (mis. `app/src/main/kotlin/ai/grg/`)
-- [ ] Tambahkan `kotlinx-serialization-json:1.6.x` ke dependencies dan plugin `org.jetbrains.kotlin.plugin.serialization` ke `app/build.gradle.kts`
-- [ ] Ganti chat flow default gallery dengan single-button photo-capture → triage flow (ini perubahan UI besar; flow camera permission yang ada bisa digunakan ulang)
-- [ ] Inject system prompt kita sebagai konten user-turn pertama saat panggil model
-- [ ] Decode output model dengan `parseEdgeReport()` dan render `EdgeTriageReport` hasilnya sebagai result card dengan severity badge, hazards list, immediate action, dan routing badge
-- [ ] Pastikan Gemma 4 E2B berhasil di-download dari model picker gallery dan jalan di dalam app yang sudah dimodifikasi
-- [ ] Update teks Hazard Analyzer di dashboard view wildfire: "Local Gemma analysis" → "Local Gemma 4 analysis" (polishing kecil)
-- [ ] Tangkap screenshot kedua view (Wildfire dan Flood) dari deployment Vercel untuk editor video
-- [ ] Refine storyboard video di `writeup/video_script_v1.md` dengan visual unified-picker aktual yang sekarang sudah ada
+- [ ] Menambahkan keempat file Kotlin `ai.grg.*` ke fork gallery pada path package yang sesuai (sebagai contoh: `app/src/main/kotlin/ai/grg/`)
+- [ ] Menambahkan `kotlinx-serialization-json:1.6.x` ke dependencies dan plugin `org.jetbrains.kotlin.plugin.serialization` ke `app/build.gradle.kts`
+- [ ] Mengganti chat flow default dari gallery dengan single-button photo-capture → triage flow (ini merupakan perubahan UI yang besar; flow camera permission yang telah ada dapat digunakan kembali)
+- [ ] Melakukan inject pada system prompt kita sebagai konten user-turn pertama ketika memanggil model
+- [ ] Melakukan decode output model dengan `parseEdgeReport()` dan melakukan render terhadap `EdgeTriageReport` yang dihasilkan sebagai result card dengan severity badge, hazards list, immediate action, dan routing badge
+- [ ] Memastikan Gemma 4 E2B berhasil di-download dari model picker gallery dan dapat berjalan di dalam aplikasi yang telah dimodifikasi
+- [ ] Memperbarui teks Hazard Analyzer pada dashboard view wildfire: "Local Gemma analysis" → "Local Gemma 4 analysis" (polishing kecil)
+- [ ] Menangkap screenshot kedua view (Wildfire dan Flood) dari deployment Vercel untuk keperluan editor video
+- [ ] Refinement storyboard video pada `writeup/video_script_v1.md` dengan menggunakan visual unified-picker aktual yang telah tersedia
 
-### Hari 4 — 16 Mei (kuota mingguan Kaggle reset di awal hari ini)
+### Hari 4 — 16 Mei (kuota mingguan Kaggle dilakukan reset pada awal hari ini)
 
-*Hari synthesis production-quality. Kita pindah dari Colab E4B (development) ke Kaggle 31B (final submission). Scenario B dan C saat ini punya kartu "pending" di dashboard; hari ini kita ganti dengan synthesis JSON nyata dari model yang lebih besar.*
+*Hari sintesis kualitas production. Kita berpindah dari Colab E4B (untuk development) ke Kaggle 31B (untuk final submission). Scenario B dan C saat ini menampilkan kartu "pending" pada dashboard; pada hari ini kita menggantinya dengan sintesis JSON yang sesungguhnya dari model yang lebih besar.*
 
-- [ ] Buka notebook di Kaggle (bukan Colab), jalankan di 2× T4 pakai `unsloth/gemma-4-31B-it`
-- [ ] Jalankan synthesis untuk Scenario A (validasi output 31B paling tidak sama bagusnya dengan baseline E4B)
-- [ ] Jalankan synthesis untuk Scenario B
-- [ ] Jalankan synthesis untuk Scenario C
-- [ ] Save setiap output sebagai modul TypeScript `synthesis-scenario-{a,b,c}.ts` masing-masing
-- [ ] Drop ke `nusasiaga/src/lib/`, update `scenarios.ts` untuk import object baru, ubah B dan C dari `synthesisStatus: "pending"` ke `"generated"`
-- [ ] Push ke `nusasiaga` main; Vercel auto-rebuild
-- [ ] Ambil screenshot baru yang nunjukkin ketiga disaster type dengan dashboard operasional lengkap (tidak ada lagi kartu "pending")
-- [ ] Mulai syuting footage HP kalau UI Android sudah siap — responden ambil foto, triage muncul di result card
+- [ ] Membuka notebook di Kaggle (bukan Colab), mengeksekusi pada 2× T4 dengan `unsloth/gemma-4-31B-it`
+- [ ] Menjalankan sintesis untuk Scenario A (memvalidasi bahwa output 31B paling tidak setara dengan baseline dari E4B)
+- [ ] Menjalankan sintesis untuk Scenario B
+- [ ] Menjalankan sintesis untuk Scenario C
+- [ ] Menyimpan setiap output sebagai modul TypeScript `synthesis-scenario-{a,b,c}.ts` masing-masing
+- [ ] Menambahkan file-file tersebut ke `nusasiaga/src/lib/`, memperbarui `scenarios.ts` untuk melakukan import terhadap objek-objek baru, mengubah B dan C dari `synthesisStatus: "pending"` ke `"generated"`
+- [ ] Melakukan push ke `nusasiaga` main; Vercel akan melakukan auto-rebuild
+- [ ] Mengambil screenshot dashboard yang baru yang menampilkan ketiga disaster type dengan dashboard operasional yang lengkap (tidak lagi terdapat kartu "pending")
+- [ ] Memulai syuting footage HP apabila UI Android telah siap — responden mengambil foto, triage muncul pada result card
 
 ### Hari 5 — 17 Mei
 
-*Hari produksi video. Semua yang teknis seharusnya sudah beres malam ini. Dari sini tinggal editing, voicing, musik, dan polishing.*
+*Hari produksi video. Seluruh hal yang bersifat teknis seharusnya telah diselesaikan malam ini. Selanjutnya difokuskan pada editing, voice-over, musik, dan polishing.*
 
-- [ ] Syuting video 3 menit. Adegan yang direkomendasikan:
-  1. B-roll bencana (footage gempa Cianjur atau banjir Jakarta; lisensi CC0 atau fair-use, max 5 detik each)
-  2. HP di tangan, toggle mode pesawat terlihat, ambil foto
+- [ ] Syuting video berdurasi 3 menit. Adegan yang direkomendasikan:
+  1. B-roll bencana (footage gempa Cianjur atau banjir Jakarta; menggunakan lisensi CC0 atau fair-use, maksimal 5 detik per cuplikan)
+  2. HP di tangan, toggle mode pesawat terlihat, pengambilan foto
   3. Result card EdgeTriageReport memenuhi layar HP
-  4. Dashboard di-scroll, nge-switch antara Wildfire / Flood / Earthquake / Industrial Fire
-  5. Beat arsitektur (E2B → 31B → dashboard, dinarrasikan)
-- [ ] Edit. Tambah voice-over (English; native atau near-native, tone tenang/serius). Tambah music bed (YouTube Audio Library atau track CC-attribution yang cocok untuk tone serius-tapi-hopeful)
-- [ ] Upload ke YouTube sebagai unlisted. Verifikasi link bisa diakses tanpa login. Save link untuk writeup
-- [ ] Opsional: Unsloth LoRA fine-tune E2B dengan gambar bencana yang dikurasi. Kalau fine-tune materialitas memperbaiki kalibrasi severity, dokumentasikan; kalau tidak, drop
-- [ ] Opsional: tambah scenario user-report wildfire (kebakaran lahan gambut Riau, ~10 laporan buatan tangan). Akan bikin tab wildfire dashboard nampilkan baik data NASA FIRMS DAN synthesis user-report
+  4. Dashboard di-scroll, berpindah antara Wildfire / Flood / Earthquake / Industrial Fire
+  5. Beat arsitektur (E2B → 31B → dashboard, dinarasikan)
+- [ ] Editing. Menambahkan voice-over (bahasa Inggris; native atau near-native, dengan tone yang tenang/serius). Menambahkan music bed (YouTube Audio Library atau track CC-attribution yang sesuai dengan tone serius namun penuh harapan)
+- [ ] Upload ke YouTube sebagai unlisted. Memverifikasi link dapat diakses tanpa login. Menyimpan link tersebut untuk writeup
+- [ ] Opsional: Unsloth LoRA fine-tune E2B dengan gambar bencana yang telah dikurasi. Apabila fine-tune secara material memperbaiki kalibrasi severity, hal tersebut didokumentasikan; apabila tidak, dapat di-drop
+- [ ] Opsional: menambahkan scenario user-report wildfire (kebakaran lahan gambut Riau, sekitar 10 laporan yang disusun manual). Hal ini akan membuat tab wildfire pada dashboard menampilkan data NASA FIRMS sekaligus sintesis user-report
 
 ### Hari 6 — 18 Mei · HARI SUBMISSION
 
-*Polishing, dry run, submit. Jangan ship code di hari ini kecuali ada yang rusak.*
+*Polishing, dry run, submission. Mohon untuk tidak melakukan ship code pada hari ini kecuali terdapat hal yang bersifat kritis.*
 
-- [ ] Pangkas writeup dari 1573 jadi ≤1500 kata. Pangkas dari bagian "Technical Challenges" dulu; pertahankan bagian impact dan arsitektur
-- [ ] Tambahkan URL Vercel, URL YouTube, URL GitHub (kedua repo), dan link file APK ke writeup
-- [ ] Pilih cover image — foto bersih dashboard dengan salah satu scenario terbuka adalah image tunggal yang paling kuat
-- [ ] Dry run: buka form Kaggle writeup di browser, paste semua, preview, tapi **jangan submit dulu**
-- [ ] Double-check pemilihan track: **Impact Track → Global Resilience**
-- [ ] Submit minimal 6 jam sebelum deadline. **Deadline: 11:59 PM UTC, Senin 18 Mei 2026.** Itu = **06:59 WIB, Selasa 19 Mei 2026.**
+- [ ] Memangkas writeup dari 1573 kata menjadi ≤1500 kata. Pemangkasan dilakukan dari bagian "Technical Challenges" terlebih dahulu; mempertahankan bagian impact dan arsitektur
+- [ ] Menambahkan URL Vercel, URL YouTube, URL GitHub (kedua repo), serta link file APK ke writeup
+- [ ] Memilih cover image — foto dashboard yang bersih dengan salah satu scenario yang terbuka merupakan image tunggal yang paling kuat
+- [ ] Dry run: membuka form Kaggle writeup di browser, menyalin seluruh konten, melakukan preview, namun **mohon untuk belum melakukan submit**
+- [ ] Verifikasi ulang pemilihan track: **Impact Track → Global Resilience**
+- [ ] Melakukan submit paling lambat 6 jam sebelum deadline. **Deadline: pukul 11:59 PM UTC, Senin 18 Mei 2026.** Atau setara dengan **pukul 06:59 WIB, Selasa 19 Mei 2026.**
 
 ---
 
 ## 12. Deliverables submission (sesuai aturan Kaggle)
 
-Kaggle Writeup adalah artefak payung. Yang lain attach ke sana. Kita harus include semua ini:
+Kaggle Writeup merupakan artefak payung. Seluruh artefak lainnya di-attach kepadanya. Kita wajib menyertakan seluruh hal berikut:
 
-1. **Kaggle Writeup ≤ 1500 kata.** Penjelasan gaya paper- atau blog-style tentang proyek. Arsitektur, untuk apa kita pakai Gemma 4, technical challenges, kenapa pilihan kita yang tepat. Ini "proof of work" — juri baca untuk verifikasi video tidak di-fake. Submission lebih dari 1500 kata mungkin kena penalty.
-2. **Video YouTube ≤ 3 menit.** Di-publish ke YouTube (unlisted oke), bisa dilihat publik tanpa login. Deliverable paling penting — 70% dari nilai.
-3. **Public Code Repository.** Kedua GitHub repo kita (`gemma-disaster-grid` dan `nusasiaga`) terdaftar di bagian Project Links di writeup. Code harus bisa dibaca publik, tanpa login atau paywall.
-4. **Live Demo URL.** Deployment Vercel. Bikin juri bisa rasakan proyek langsung tanpa jalanin apa pun. Harus bisa diakses publik tanpa login.
-5. **Media Gallery termasuk cover image.** Cover image wajib untuk bisa submit writeup. Kita pilih Hari 6.
-6. **(Opsional) Lampiran file APK.** App Android di-export sebagai APK yang bisa di-install, di-attach sebagai file ke writeup. Bikin juri bisa install di HP Android mereka sendiri kalau mau.
+1. **Kaggle Writeup ≤ 1500 kata.** Penjelasan dalam format paper- atau blog-style mengenai proyek. Mencakup arsitektur, penggunaan Gemma 4, technical challenges, serta alasan ketepatan pilihan-pilihan kita. Dokumen ini merupakan "proof of work" — juri akan membacanya untuk memverifikasi bahwa video bukan merupakan rekayasa. Submission yang melebihi 1500 kata berpotensi dikenai penalty.
+2. **Video YouTube ≤ 3 menit.** Di-publish ke YouTube (unlisted diperkenankan), dapat dilihat secara publik tanpa login. Merupakan deliverable yang paling penting — 70% dari total nilai.
+3. **Public Code Repository.** Kedua GitHub repo kita (`gemma-disaster-grid` dan `nusasiaga`) tercantum di bagian Project Links pada writeup. Code wajib dapat dibaca secara publik, tanpa login maupun paywall.
+4. **Live Demo URL.** Deployment di Vercel. Memungkinkan juri untuk merasakan proyek secara langsung tanpa harus menjalankan apa pun. Wajib dapat diakses secara publik tanpa login.
+5. **Media Gallery termasuk cover image.** Cover image bersifat wajib agar writeup dapat di-submit. Akan dipilih pada Hari 6.
+6. **(Opsional) Lampiran file APK.** Aplikasi Android yang di-export sebagai APK yang dapat di-install, di-attach sebagai file pada writeup. Memungkinkan juri untuk melakukan install pada perangkat Android pribadi mereka apabila menghendaki.
 
-Kita submit di kategori **Impact Track / Global Resilience**. Kita eligible untuk Cactus Prize di Special Tech track secara bersamaan — aturannya membolehkan tumpuk Main + Special Tech, dan writeup kita harus secara eksplisit menyebutkan eligibility Cactus di bagian arsitektur.
+Submission dilakukan pada kategori **Impact Track / Global Resilience**. Kita memenuhi syarat untuk Cactus Prize pada Special Tech track secara bersamaan — peraturan memperbolehkan tumpuk Main + Special Tech, dan writeup kita perlu menyebutkan secara eksplisit kelayakan terhadap Cactus pada bagian arsitektur.
 
 ---
 
 ## 13. Norma kerja
 
-Proyek dua orang, satu produk. Makin sering kita sync, makin sedikit rework.
+Proyek dengan dua orang, satu produk. Semakin sering kita melakukan sinkronisasi, semakin sedikit pekerjaan ulang yang diperlukan.
 
-- **`git pull` sebelum mulai kerja.** Checkout yang ketinggalan menyebabkan konflik merge yang buang waktu.
-- **Push commit kecil-kecil, push sering.** Satu commit untuk satu perubahan logis. Lebih mudah di-review, lebih mudah di-revert.
-- **Kalau ubah file yang dipakai bersama (schemas, prompts, scenarios, rencana tim sendiri), kasih tahu di chat atau di pesan commit** supaya yang lain tahu harus pull sebelum mulai perubahan selanjutnya.
-- **Jangan force-push ke main.** Kalau perlu re-write history, ngobrol dulu sama yang lain. Tidak ada skenario dalam timeline enam hari kita di mana force-push adalah jawaban yang benar.
-- **Semua keputusan branding atau arsitektur major didokumentasikan di file ini.** Kalau bikin keputusan yang mempengaruhi cara kita present proyek, update dokumen ini dan push.
-- **Satu orang pada satu waktu untuk refactor komponen besar.** Polishing kosmetik (CSS, edit copy, fix kecil) paralel oke.
-- **Kalau tidak setuju dengan sesuatu di sini**, angkat di chat. Jangan push around. Tujuan single source of truth adalah supaya tetap jadi single source of truth.
-- **Kalau ketemu merge conflict yang tidak tahu cara resolve**, jangan paksa resolution. Ping yang lain, lihat sama-sama. Lima menit percakapan lebih bagus dari satu jam merge yang buruk.
+- **`git pull` sebelum memulai pekerjaan.** Checkout yang tertinggal menyebabkan konflik merge yang membuang waktu.
+- **Melakukan push commit dalam ukuran kecil, dilakukan secara sering.** Satu commit untuk satu perubahan logis. Lebih mudah untuk di-review, lebih mudah untuk di-revert.
+- **Apabila melakukan perubahan pada file yang digunakan bersama (schemas, prompts, scenarios, atau rencana tim itu sendiri), mohon untuk menginformasikan hal tersebut melalui chat atau pada pesan commit** agar rekan tim mengetahui bahwa pull perlu dilakukan sebelum memulai perubahan berikutnya.
+- **Mohon untuk tidak melakukan force-push ke main.** Apabila perlu melakukan rewrite history, dilakukan diskusi terlebih dahulu dengan rekan tim. Tidak terdapat skenario dalam timeline enam hari kita di mana force-push merupakan jawaban yang tepat.
+- **Seluruh keputusan branding atau arsitektur yang bersifat major didokumentasikan dalam file ini.** Apabila terdapat keputusan yang mempengaruhi cara presentasi proyek, dokumen ini diperbarui dan dilakukan push.
+- **Satu orang pada satu waktu untuk refactor komponen besar.** Polishing kosmetik (CSS, copy edits, perbaikan kecil) yang dilakukan secara paralel masih dapat diterima.
+- **Apabila terdapat ketidaksetujuan terhadap sesuatu di dalam dokumen ini**, mohon untuk mengangkat hal tersebut di chat. Mohon untuk tidak mem-push di sekitar isu tersebut. Tujuan dari single source of truth adalah agar tetap berfungsi sebagai single source of truth.
+- **Apabila menjumpai merge conflict yang tidak diketahui cara penyelesaiannya**, mohon untuk tidak memaksakan resolusi. Hubungi rekan tim, tinjau bersama. Lima menit diskusi memberikan hasil yang jauh lebih baik dibandingkan satu jam merge yang buruk.
 
 ---
 
 ## 14. Risiko kritis dan mitigasi
 
-| Risiko | Likelihood | Tindakan |
+| Risiko | Kemungkinan | Tindakan |
 |---|---|---|
-| **Download Gemma 4 E2B di Android gagal** karena gallery butuh HuggingFace OAuth dan kita belum set up developer app credentials | Medium | Pertama, coba model picker default gallery tanpa OAuth — banyak model yang public. Kalau cuma E2B yang butuh OAuth, set up HF developer app sesuai `DEVELOPMENT.md` gallery dan update `ProjectConfig.kt`. Worst case: pakai model yang lebih kecil yang sudah pre-bundled di demo, tulis di writeup framing-nya "arsitektur sudah terbukti; bundle model menyusul pasca-hackathon" |
-| **Run Kaggle 31B di Hari 4 gagal** karena masalah memori, generasi lambat, atau error notebook | Low | Fallback ke output E4B dari Colab (kita sudah punya Scenario A dari Hari 1) dan secara eksplisit cantumkan di writeup bahwa demo pakai E4B karena keterbatasan compute. Cerita arsitektur sama saja regardless varian Gemma 4 mana yang jalan |
-| **Deploy Vercel gagal karena API key FIRMS** | Low | Loader dashboard-hotspots view wildfire punya fallback chain 3-tier (FIRMS live → output notebook JSON → demo data). Bahkan tanpa API key di-set, page tetap render data hotspot demo. Kalau Vercel berhasil deploy sama sekali, view wildfire akan jalan |
-| **Video tidak selesai di Hari 5** karena syuting + editing lebih lama dari yang diharapkan | Medium | Potong jadi versi 90-detik yang fokus ke satu beat sisi dashboard (panel synthesis) plus satu beat sisi HP (mode pesawat + ambil foto + result card). Pakai banyak B-roll dan voice-over minimal |
-| **Writeup melampaui 1500 kata** | Low | Pangkas dari Section 5 (Technical Challenges) dulu — drop contoh-contoh spesifik dan pertahankan headline. Pertahankan bagian impact + arsitektur dengan biaya apapun |
-| **HP tidak punya cukup RAM / storage untuk jalanin E2B** | Low | E2B butuh sekitar 2,5 GB RAM kosong. Kalau HP test struggle, dokumentasikan hardware yang direkomendasikan di writeup; rekam video demo di HP apapun yang JALAN; sebutkan user bisa menemukan list "Recommended Android device" di `android/README.md` kita |
-| **Kedua anggota tim kelelahan di Hari 6** | High (selalu) | Dry run submission dimulai satu hari penuh lebih awal. Jangan tulis code baru di Hari 6 kecuali ada yang on fire. Hari 6 untuk polishing, bukan fitur |
+| **Download Gemma 4 E2B pada Android gagal** karena gallery membutuhkan HuggingFace OAuth dan kita belum menyiapkan developer app credentials | Sedang | Pertama, mencoba model picker default dari gallery tanpa OAuth — banyak model yang bersifat publik. Apabila hanya E2B yang membutuhkan OAuth, lakukan setup HF developer app sesuai dengan `DEVELOPMENT.md` di gallery dan perbarui `ProjectConfig.kt`. Skenario terburuk: menggunakan model yang lebih kecil yang telah pre-bundled untuk demo, dengan framing pada writeup berupa "arsitektur telah terbukti; bundle model akan menyusul pasca-hackathon" |
+| **Eksekusi Kaggle 31B pada Hari 4 gagal** karena permasalahan memori, generasi yang lambat, atau error pada notebook | Rendah | Melakukan fallback ke output E4B dari Colab (kita telah memiliki Scenario A dari Hari 1) dan secara eksplisit mencantumkan pada writeup bahwa demo menggunakan E4B karena adanya keterbatasan compute. Narasi arsitektur tetap sama tanpa terpengaruh varian Gemma 4 mana yang dieksekusi |
+| **Deployment Vercel gagal karena API key FIRMS** | Rendah | Loader dashboard-hotspots pada view wildfire memiliki fallback chain 3-tier (FIRMS live → output notebook JSON → demo data). Meskipun API key belum di-set, page akan tetap melakukan render data hotspot demo. Apabila Vercel berhasil melakukan deploy, view wildfire akan berfungsi |
+| **Video tidak dapat diselesaikan pada Hari 5** karena syuting + editing memerlukan waktu lebih lama dari yang diperkirakan | Sedang | Memangkas menjadi versi 90-detik yang berfokus pada satu beat dari sisi dashboard (panel sintesis) ditambah satu beat dari sisi HP (mode pesawat + pengambilan foto + result card). Memanfaatkan banyak B-roll dan voice-over yang minimal |
+| **Writeup melampaui 1500 kata** | Rendah | Pemangkasan dilakukan dari Section 5 (Technical Challenges) terlebih dahulu — drop contoh-contoh spesifik dan pertahankan headline. Pertahankan bagian impact + arsitektur dengan upaya maksimal |
+| **HP tidak memiliki kapasitas RAM / storage yang memadai untuk menjalankan E2B** | Rendah | E2B membutuhkan sekitar 2,5 GB RAM kosong. Apabila HP test mengalami kesulitan, dokumentasikan hardware yang direkomendasikan pada writeup; rekam video demo pada HP apa pun yang BERHASIL berjalan; sebutkan bahwa pengguna dapat menemukan daftar "Recommended Android device" pada `android/README.md` kita |
+| **Kedua anggota tim mengalami kelelahan menjelang Hari 6** | Tinggi (selalu) | Dry run submission dimulai satu hari penuh lebih awal. Mohon untuk tidak menulis code baru pada Hari 6 kecuali terdapat hal yang bersifat kritis. Hari 6 ditujukan untuk polishing, bukan untuk pengembangan fitur |
 
 ---
 
@@ -356,12 +356,12 @@ Proyek dua orang, satu produk. Makin sering kita sync, makin sedikit rework.
 - **URL Hackathon:** <https://www.kaggle.com/competitions/gemma-4-good-hackathon>
 - **Code repo (Python/Android/writeup):** <https://github.com/listyantidewi1/gemma-disaster-grid>
 - **Code repo (dashboard):** <https://github.com/NoesaaDecodes/nusasiaga>
-- **URL Live Demo:** (ditambahkan Hari 2 setelah deploy Vercel)
-- **URL Video:** (ditambahkan Hari 5 setelah upload)
-- **Notebook starter Kaggle (referensi saja):** <https://www.kaggle.com/code/danielhanchen/gemma4-31b-unsloth>
-- **AI Edge Gallery (app Android yang kita fork):** <https://github.com/google-ai-edge/gallery>
-- **Bobot Gemma 4 E2B LiteRT di Hugging Face:** <https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm>
-- **Bobot Gemma 4 31B Unsloth di Hugging Face:** <https://huggingface.co/unsloth/gemma-4-31B-it>
+- **URL Live Demo:** (akan ditambahkan pada Hari 2 setelah deployment Vercel)
+- **URL Video:** (akan ditambahkan pada Hari 5 setelah upload)
+- **Notebook starter Kaggle (sebagai referensi saja):** <https://www.kaggle.com/code/danielhanchen/gemma4-31b-unsloth>
+- **AI Edge Gallery (aplikasi Android yang kita fork):** <https://github.com/google-ai-edge/gallery>
+- **Bobot Gemma 4 E2B LiteRT pada Hugging Face:** <https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm>
+- **Bobot Gemma 4 31B Unsloth pada Hugging Face:** <https://huggingface.co/unsloth/gemma-4-31B-it>
 
 ---
 
@@ -370,4 +370,4 @@ Proyek dua orang, satu produk. Makin sering kita sync, makin sedikit rework.
 - listyantidewi@gmail.com
 - noesaaerp@gmail.com
 
-Yuk kita ship.
+Selamat bekerja.
