@@ -85,12 +85,32 @@ CELLS = [
         | Colab Pro (A100 lucky-draw) | A100 (40GB) | `unsloth/gemma-4-31B-it` |
         | Kaggle (final submission) | 2× T4 (30GB) | `unsloth/gemma-4-31B-it` |
 
-        We clone the project repo first so the notebook can use our schemas,
-        prompts, and demo scenarios directly from version control.
+        We install dependencies first so any missing-module errors fail fast
+        before the heavier model-loading steps. Then we clone the project
+        repo so the notebook can use our schemas, prompts, and demo
+        scenarios directly from version control.
     """),
 
     code("""
-        # Clone the project repo. Idempotent if already present.
+        # ── Install dependencies FIRST ─────────────────────────────────────
+        # Pinned versions follow the Kaggle starter notebook (gemma4-31b-unsloth)
+        # so Colab and Kaggle environments produce comparable outputs.
+        # Use %pip (cell magic), not !pip, so installs land in the active kernel.
+        %pip install -qqq \\
+            unsloth "unsloth_zoo>=2026.4.6" \\
+            "transformers==5.5.0" \\
+            "torch>=2.8.0" "triton>=3.4.0" \\
+            torchvision bitsandbytes torchcodec timm \\
+            pydantic
+        print("OK — dependencies installed. If Colab warns about restarting the runtime,")
+        print("you can ignore it for now; later cells will still find the right versions.")
+    """),
+
+    code("""
+        # ── Clone the project repo ─────────────────────────────────────────
+        # Idempotent: pulls latest if already present. Drops us into the
+        # repo root so relative paths in later cells (prompts/, data/, etc.)
+        # resolve correctly.
         import os, subprocess
         REPO_URL = "https://github.com/listyantidewi1/gemma-disaster-grid.git"
         REPO_DIR = "gemma-disaster-grid"
@@ -101,19 +121,6 @@ CELLS = [
         os.chdir(REPO_DIR)
         print("CWD:", os.getcwd())
         print("Files at root:", sorted(os.listdir(".")))
-    """),
-
-    code("""
-        # Install dependencies. Pinned versions follow the Kaggle starter
-        # notebook (gemma4-31b-unsloth) so the Kaggle and Colab environments
-        # produce the same output up to numerical noise.
-        %pip install -qqq \\
-            unsloth "unsloth_zoo>=2026.4.6" \\
-            "transformers==5.5.0" \\
-            "torch>=2.8.0" "triton>=3.4.0" \\
-            torchvision bitsandbytes torchcodec timm \\
-            pydantic
-        print("OK — dependencies installed.")
     """),
 
     # ─── 2. Model selection ──────────────────────────────────────────────
