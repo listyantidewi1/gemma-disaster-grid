@@ -1,139 +1,133 @@
-# Android app — `Gemma Rescue Grid Edge`
+# Gemma Rescue Grid — Android edge tier
 
-The Android app is the **video demo's hero** and the **APK live-demo attachment**. It runs Gemma 4 E2B on-device via Google AI Edge LiteRT, fully offline.
+The on-device tier of the Gemma Rescue Grid architecture. Runs Gemma 4 E2B fully offline via Google AI Edge LiteRT on a responder's phone, accepting a photograph plus optional voice or text annotation and emitting a structured `EdgeTriageReport` JSON object in under 5 seconds on a Snapdragon 8 Gen 2-class device.
 
-## Stack
+This is the **field-responder** half of the system. The other half (cloud-tier 31B synthesis) lives in [`notebook/gemma_rescue_grid.ipynb`](../notebook/gemma_rescue_grid.ipynb).
 
-- **Language:** Kotlin (LiteRT-LM Kotlin API is stable)
-- **Min SDK:** API 28 (Android 9). Tested on API 33+.
-- **Architecture:** single-activity, Jetpack Compose UI, ViewModel + Coroutines
-- **Inference:** Google AI Edge LiteRT-LM Kotlin bindings, loading `gemma-4-E2B-it-litert-lm`
-- **Storage:** Room (SQLite) for the report queue
-- **Camera:** CameraX
-- **Audio:** MediaRecorder (16kHz mono PCM for Gemma 4 audio input)
-- **Permissions:** CAMERA, RECORD_AUDIO, (optional) ACCESS_FINE_LOCATION
+---
 
-## App flow (UI states)
+## Drop-in Kotlin domain layer
 
-```
-┌────────────────────────┐
-│  HOME                  │
-│  [New report]          │
-│  [Queue: 3 pending]    │
-│  [Settings]            │
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│  CAPTURE               │
-│  Camera preview         │
-│  [Snap photo]          │
-│  [Hold to record]      │
-│  [Optional text note]  │
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│  PROCESSING            │
-│  "Running Gemma 4 on   │
-│   your device..."      │
-│  [progress ring]       │
-│  ~4-8s on midrange     │
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│  RESULT                │
-│  ┌──────────────────┐  │
-│  │ SEVERITY 4       │  │
-│  │ FLOOD            │  │
-│  │ 2 adults, 1 child│  │
-│  │ Live wires near  │  │
-│  │   pedestrians    │  │
-│  │ ACTION: move      │  │
-│  │   pedestrians... │  │
-│  │ ┌──────────────┐ │  │
-│  │ │DEEP LANE     │ │  │
-│  │ │queued        │ │  │
-│  │ └──────────────┘ │  │
-│  └──────────────────┘  │
-│  [Save & continue]     │
-│  [Save & sync now]     │
-└────────────────────────┘
-            │
-            ▼
-┌────────────────────────┐
-│  QUEUE                 │
-│  list of pending sync  │
-│  with status badges    │
-│  [Sync all when online]│
-└────────────────────────┘
+The `app/src/main/kotlin/ai/grg/` directory contains four platform-agnostic Kotlin files you can drop straight into any Android project (or pure Kotlin/JVM project):
+
+| File | Purpose |
+|---|---|
+| [`Schemas.kt`](app/src/main/kotlin/ai/grg/Schemas.kt) | `EdgeTriageReport`, `CommandCenterSynthesis`, enums, supporting types. Uses `kotlinx.serialization`. Mirrors `grg/schemas.py`. |
+| [`EdgeTriagePrompt.kt`](app/src/main/kotlin/ai/grg/EdgeTriagePrompt.kt) | The exact system prompt sent to Gemma 4 E2B on every inference. Also defines recommended sampling parameters. |
+| [`Routing.kt`](app/src/main/kotlin/ai/grg/Routing.kt) | `decideRouting(report, context)` — the Cactus Prize hook. Combines the model's self-assessment with app-level cross-report heuristics. |
+| [`JsonExtraction.kt`](app/src/main/kotlin/ai/grg/JsonExtraction.kt) | `extractJsonFromModelOutput`, `attemptTruncatedJsonRepair`, and `parseEdgeReport` — robust parsing for whatever the model emits. |
+
+Only Gradle dependency you must add: `org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.x` (and the `org.jetbrains.kotlin.plugin.serialization` plugin in your app `build.gradle.kts`).
+
+---
+
+## Recommended approach: fork Google AI Edge Gallery
+
+Don't build the LiteRT integration from scratch. Fork:
+
+```bash
+git clone https://github.com/google-ai-edge/gallery
 ```
 
-## Key implementation notes
+Gallery already implements:
+- LiteRT-LM model download + loading
+- Multimodal prompt construction (text + image + audio)
+- Inference loop with streaming
+- A working camera permission + capture flow
+- Compose UI scaffolding
 
-### LiteRT model loading
-Per Google AI Edge docs, the recommended approach is to download the `.litertlm` file once (from `litert-community/gemma-4-E2B-it-litert-lm` on Hugging Face) and load it from app-private storage. Model is ~2.5GB so this is a one-time cost.
+**What you change to make it Gemma Rescue Grid:**
 
-### Multimodal message construction
-Gemma 4 E2B accepts a multimodal message:
-```kotlin
-val message = listOf(
-    Content.SystemText(systemPromptFromAssets()),
-    Content.UserText("Triage this scene."),
-    Content.UserImage(photoBitmap),
-    Content.UserAudio(voiceNotePcmBytes)  // optional
-)
+| Gallery file | Change |
+|---|---|
+| Model selection / download | Pin to `litert-community/gemma-4-E2B-it-litert-lm` only. Hide other models from the UI. |
+| Chat screen | Replace the free-form chat with a single-button "Snap & Triage" capture flow. Use CameraX or `ACTION_IMAGE_CAPTURE`. |
+| Prompt construction | Always prepend `ai.grg.EDGE_SYSTEM_PROMPT` as the first user-turn content. |
+| Output rendering | Parse output with `ai.grg.parseEdgeReport()`. Render an `EdgeTriageReport` as a result card: severity badge, hazards list, immediate action, routing badge. |
+| Sampling | Use `ai.grg.EdgeSamplingParams.TEMPERATURE = 1.0f, TOP_P = 0.95f, TOP_K = 64, MAX_NEW_TOKENS = 512`. |
+| Queue / sync (Day 4) | Add a Room database table for `EdgeTriageReport`. For demo: just toggle a "synced" flag locally; no real HTTPS upload needed. |
+
+---
+
+## End-to-end inference flow (target)
+
 ```
-(Exact API surface TBD — confirm against LiteRT-LM Kotlin samples on Day 2.)
+User opens the app                                 ▼
+                                          ┌────────────────┐
+   Tap [Snap]      ─── camera capture ──▶ │  Bitmap photo  │
+                                          └────────────────┘
+                                                   │
+   Optional: long-press [Snap] for                 │
+   voice note (16 kHz mono PCM)                    │
+                                                   ▼
+                                          ┌────────────────┐
+                                          │  LiteRT-LM     │
+                                          │  Gemma 4 E2B   │
+                                          │  + system      │
+                                          │  prompt        │
+                                          └────────────────┘
+                                                   │
+                                          raw text output
+                                                   │
+                                                   ▼
+                                          ┌────────────────┐
+                                          │ parseEdgeReport│
+                                          │  (extract +    │
+                                          │  repair +      │
+                                          │  validate)     │
+                                          └────────────────┘
+                                                   │
+                                          EdgeTriageReport
+                                                   │
+                                                   ▼
+                                          ┌────────────────┐
+                                          │ decideRouting  │
+                                          │  (Cactus hook) │
+                                          └────────────────┘
+                                                   │
+                                          RoutingDecision
+                                                   │
+                                                   ▼
+                                          ┌────────────────┐
+                                          │  Result screen │
+                                          │  + Save & Queue│
+                                          └────────────────┘
+```
 
-### JSON parsing + validation
-Use `kotlinx.serialization` for `EdgeTriageReport`. Validate against the schema before persisting; if validation fails, retry once with `temperature=0.4` and `top_p=0.9`.
+## Sampling, latency, and memory budget
 
-### Routing decision
-Implemented as a pure Kotlin function `decideRouting(report: EdgeTriageReport, context: AppContext): RoutingDecision` that combines:
-- `report.routing_recommendation` (the model's self-assessment)
-- Recent report count from the same `location.label` (queried from Room)
-- Current connectivity state (ConnectivityManager)
-- Battery level (BatteryManager)
+| Device class | Cold model load | First inference | Subsequent inference | VRAM |
+|---|---|---|---|---|
+| Snapdragon 8 Gen 2 / Pixel 8 Pro | ~8 sec | ~5 sec | ~3 sec | ~2.5 GB |
+| Snapdragon 7+ Gen 3 / mid-range | ~12 sec | ~8 sec | ~5 sec | ~2.5 GB |
+| Snapdragon 6 series | ~20 sec | ~15 sec | ~10 sec | tight (4 GB phones may swap) |
 
-The decision and rationale are displayed on the result screen — this is the visible Cactus Prize element.
-
-### Sync logic
-- Trigger: app foregrounded + connectivity online + queue depth > 0
-- Endpoint: configurable; for demo we point at a Kaggle-hosted endpoint or a local dev server
-- Retry: exponential backoff, max 5 attempts per report
-- Conflict handling: server is the source of truth once a report is acknowledged
-
-## What to fork as a starting point
-
-**Reference apps to study:**
-1. **Google AI Edge Gallery** — official sample app (https://github.com/google-ai-edge/gallery)
-2. **LiteRT-LM Android samples** in the main repo (https://github.com/google-ai-edge/LiteRT-LM/tree/main)
-
-**Decision:** Fork AI Edge Gallery and strip out everything that isn't related to text-image input → text output. Replace UI with our triage-specific flow. This saves ~2 days of Android setup.
+Numbers are Google AI Edge published estimates; we'll record real ones on the user's TUF A15 + their test Android phone for the writeup.
 
 ## Build & install
 
+Standard Android workflow once Gallery is forked and customized:
+
 ```bash
-# Once forked and customized:
+cd android
 ./gradlew :app:assembleRelease
 
 # Output: android/app/build/outputs/apk/release/app-release.apk
-# Attach this APK to the Kaggle Writeup as a file (per submission rules)
+# Attach this APK to the Kaggle Writeup as a file (per submission rules).
 ```
 
-Target APK size: <60MB (model is downloaded on first run, not bundled).
+Target APK size: <50 MB (the model is downloaded on first run, not bundled).
 
-## Telemetry & analytics
-
-**None.** This is an offline-first privacy-preserving disaster tool. We do not bundle Firebase, Crashlytics, or any analytics SDK in the demo build. Mention this explicitly in the writeup as an ethics differentiator.
-
-## What we are NOT building in the Android app
+## What we are NOT building
 
 - Login / account system
 - Cloud configuration UI (endpoint is hardcoded for demo)
 - Multi-user/team features
-- Map view (this is a phone-side reporter, not a coordinator dashboard)
+- Map view in the app (the dashboard tab in NusaSiaga is the ops view)
 - Push notifications
 - Background sync service (foreground sync only — keeps battery story honest)
+- iOS port (LiteRT-LM Swift is still maturing; out of hackathon scope)
+
+## Privacy posture
+
+No telemetry. No Firebase. No Crashlytics. No analytics SDKs. The MVP build phones home to nothing. Photos and audio stay on the device unless the user explicitly queues a report for sync. This is documented prominently in the Kaggle Writeup as an ethics differentiator.
