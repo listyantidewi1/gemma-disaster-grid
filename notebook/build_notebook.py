@@ -251,7 +251,8 @@ CELLS = [
 
         The system prompt lives at `prompts/cloud_synthesis_system.md` and
         is extracted from its surrounding documentation. The schema models
-        and the routing function live at `notebook/utils/`.
+        and the routing function live at `grg/` (a project-specific package
+        name to avoid shadowing Jupyter's own `notebook` package on Colab).
     """),
 
     code("""
@@ -299,7 +300,7 @@ CELLS = [
         disambiguation).
 
         All 12 reports validate cleanly against `EdgeTriageReport` — confirmed
-        by `notebook/utils/smoke_test.py`.
+        by `grg/smoke_test.py`.
     """),
 
     code("""
@@ -355,38 +356,57 @@ CELLS = [
         an optional `<|channel>thought` reasoning trace) and then emits a
         single JSON object conforming to the `CommandCenterSynthesis` schema.
 
-        Expected latency:
-        - **E4B on Colab T4:** ~10-25 sec
-        - **26B MoE on Colab T4:** ~30-60 sec
-        - **31B dense on Kaggle 2× T4:** ~30-90 sec
+        Empirical latency on Scenario A (12 reports, ~3200-token user message):
+
+        | Model | Hardware | Wall-clock |
+        |---|---|---|
+        | Gemma 4 E4B | Colab Free T4 (15GB) | ~10-12 min |
+        | Gemma 4 26B MoE | Colab T4 (15GB) | ~5-8 min |
+        | Gemma 4 31B | Kaggle 2× T4 (30GB) | TBD — measured Day 4 |
+
+        **Caching:** after the first successful generation we save
+        `raw_output` to `synthesis_cache_scenario_a.txt`. Re-running this
+        cell reuses the cache instead of regenerating. Delete the file to
+        force a fresh run.
     """),
 
     code("""
         import json, time
+        from pathlib import Path
 
-        reports_json = json.dumps(scenario["reports"], indent=2)
-        user_content = (
-            f"Below are {len(reports)} EdgeTriageReport objects submitted "
-            f"over the past ~90 minutes from a developing flood incident in "
-            f"central Jakarta. Synthesize them into a single "
-            f"CommandCenterSynthesis JSON object. Include a "
-            f"<|channel>thought reasoning trace before the final JSON.\\n\\n"
-            f"```json\\n{reports_json}\\n```"
-        )
+        CACHE_PATH = Path("synthesis_cache_scenario_a.txt")
+        FORCE_REGEN = False  # flip to True to ignore the cache
 
-        print(f"User message: {len(user_content):,} chars "
-              f"(~{len(user_content)//4} tokens) — generating...\\n")
-        print("─" * 72)
-
-        t0 = time.time()
-        raw_output = synthesize(
-            SYNTHESIS_SYSTEM_PROMPT,
-            user_content,
-            max_new_tokens=4096,
-            stream=True,
-        )
-        elapsed = time.time() - t0
-        print(f"\\n\\n─── Generated in {elapsed:.1f} sec ───")
+        if CACHE_PATH.exists() and CACHE_PATH.stat().st_size > 1000 and not FORCE_REGEN:
+            raw_output = CACHE_PATH.read_text(encoding="utf-8")
+            print(f"Loaded cached synthesis from {CACHE_PATH.name} "
+                  f"({CACHE_PATH.stat().st_size:,} bytes).")
+            print("Set FORCE_REGEN=True and re-run to regenerate.")
+        else:
+            reports_json = json.dumps(scenario["reports"], indent=2)
+            user_content = (
+                f"Below are {len(reports)} EdgeTriageReport objects submitted "
+                f"over the past ~90 minutes from a developing flood incident in "
+                f"central Jakarta. Synthesize them into a single "
+                f"CommandCenterSynthesis JSON object. Include a "
+                f"<|channel>thought reasoning trace before the final JSON.\\n\\n"
+                f"```json\\n{reports_json}\\n```"
+            )
+            print(f"User message: {len(user_content):,} chars "
+                  f"(~{len(user_content)//4} tokens) — generating "
+                  f"(this can take 5-12 minutes on Colab T4)...\\n")
+            print("─" * 72)
+            t0 = time.time()
+            raw_output = synthesize(
+                SYNTHESIS_SYSTEM_PROMPT,
+                user_content,
+                max_new_tokens=4096,
+                stream=True,
+            )
+            elapsed = time.time() - t0
+            print(f"\\n\\n─── Generated in {elapsed:.1f} sec ({elapsed/60:.1f} min) ───")
+            CACHE_PATH.write_text(raw_output, encoding="utf-8")
+            print(f"Cached to {CACHE_PATH.name} for future fast reruns.")
     """),
 
     # ─── 7. Parse + validate ─────────────────────────────────────────────
@@ -396,13 +416,32 @@ CELLS = [
         Strip any thinking trace or markdown fences and validate the recovered
         JSON object against the `CommandCenterSynthesis` Pydantic schema.
 
-        Schema validation is enforced — the notebook surfaces errors instead
-        of hiding them. If validation fails, we retry once at lower
-        temperature (left as an exercise for the next iteration; for now we
-        just surface the error).
+        Schema validation is strict but we defensively truncate any free-text
+        field that overshoots its limit by a small amount (the model
+        occasionally exceeds `data_confidence_notes` by 5-10%). The
+        truncation is transparent and the rest of the synthesis is preserved.
     """),
 
     code("""
+        import json as _json
+
+        # Schema field length limits we'll auto-trim if the model overshoots.
+        # Permanent schema bumps live in grg/schemas.py; this is a defensive
+        # net so the demo never breaks on a small overflow.
+        _STR_LIMITS = {
+            "geographic_scope": 300,
+            "vulnerable_groups_summary": 400,
+            "data_confidence_notes": 600,
+        }
+
+        def _autotrim(d: dict) -> dict:
+            for k, lim in _STR_LIMITS.items():
+                v = d.get(k)
+                if isinstance(v, str) and len(v) > lim:
+                    print(f"  [autotrim] {k}: {len(v)} -> {lim} chars")
+                    d[k] = v[: lim - 3] + "..."
+            return d
+
         json_str = extract_json_from_model_output(raw_output)
 
         if json_str is None:
@@ -411,9 +450,15 @@ CELLS = [
             print(raw_output[-500:])
             synthesis = None
         else:
-            synthesis, err = parse_synthesis(json_str)
+            try:
+                _data = _json.loads(json_str)
+                _data = _autotrim(_data)
+                synthesis, err = parse_synthesis(_data)
+            except _json.JSONDecodeError as e:
+                synthesis, err = None, f"JSON decode error: {e}"
+
             if err:
-                print(f"FAIL: schema validation error\\n{err[:800]}")
+                print(f"FAIL: validation error\\n{err[:800]}")
                 print("\\nFirst 600 chars of extracted JSON:")
                 print(json_str[:600])
             else:
