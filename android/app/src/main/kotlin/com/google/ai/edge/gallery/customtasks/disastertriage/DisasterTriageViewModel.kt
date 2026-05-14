@@ -7,12 +7,14 @@
 package com.google.ai.edge.gallery.customtasks.disastertriage
 
 import ai.grg.EdgeTriageReport
+import ai.grg.LocationProvider
 import ai.grg.RoutingContext
 import ai.grg.RoutingDecision
 import ai.grg.TriageUploader
 import ai.grg.UploadResult
 import ai.grg.decideRouting
 import ai.grg.parseEdgeReport
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -20,6 +22,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.ai.edge.gallery.data.Model
 import com.google.ai.edge.gallery.runtime.runtimeHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
@@ -72,7 +75,9 @@ data class TriageUiState(
 }
 
 @HiltViewModel
-class DisasterTriageViewModel @Inject constructor() : ViewModel() {
+class DisasterTriageViewModel
+@Inject
+constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
   private val _uiState = MutableStateFlow(TriageUiState())
   val uiState = _uiState.asStateFlow()
 
@@ -193,14 +198,15 @@ class DisasterTriageViewModel @Inject constructor() : ViewModel() {
       }
       return
     }
-    val enriched =
+
+    val baseEnriched =
       parsed.copy(
         reportId = "edge-${UUID.randomUUID()}",
         timestampIso = Instant.now().toString(),
       )
     val routing =
       decideRouting(
-        report = enriched,
+        report = baseEnriched,
         context =
           RoutingContext(
             connectivityOnline = false,
@@ -209,20 +215,29 @@ class DisasterTriageViewModel @Inject constructor() : ViewModel() {
             batteryPercent = 100,
           ),
       )
+
+    // Render the result card immediately with what we have. Location and
+    // upload happen async so a slow GPS fix never blocks the UI.
     _uiState.update {
       it.copy(
         phase = TriagePhase.RESULT,
         rawOutput = raw,
-        report = enriched,
+        report = baseEnriched,
         routing = routing,
         inferenceMs = elapsedMs,
         errorMessage = null,
       )
     }
 
-    // Auto-fire a sync attempt. Result is reflected in uiState.sync; failures
-    // are non-blocking — the report is already rendered locally either way.
-    uploadReport(enriched)
+    // Fetch GPS, stamp it on the report, then upload. Worst case (denied
+    // permission / slow GPS / no fix) we upload with an empty location and
+    // the dashboard map skips the pin — the card itself still appears.
+    viewModelScope.launch(Dispatchers.IO) {
+      val location = LocationProvider.getCurrentLocation(appContext)
+      val stamped = baseEnriched.copy(location = location)
+      _uiState.update { it.copy(report = stamped) }
+      uploadReport(stamped)
+    }
   }
 
   /**

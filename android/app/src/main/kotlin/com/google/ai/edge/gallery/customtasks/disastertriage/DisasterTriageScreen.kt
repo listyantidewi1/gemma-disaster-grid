@@ -125,6 +125,16 @@ fun DisasterTriageScreen(
         PackageManager.PERMISSION_GRANTED
     )
   }
+  var hasLocationPermission by remember {
+    mutableStateOf(
+      ContextCompat.checkSelfPermission(
+        context, Manifest.permission.ACCESS_FINE_LOCATION,
+      ) == PackageManager.PERMISSION_GRANTED ||
+        ContextCompat.checkSelfPermission(
+          context, Manifest.permission.ACCESS_COARSE_LOCATION,
+        ) == PackageManager.PERMISSION_GRANTED
+    )
+  }
   val cameraPermLauncher =
     rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
       hasCameraPermission = granted
@@ -132,6 +142,10 @@ fun DisasterTriageScreen(
   val micPermLauncher =
     rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
       hasMicPermission = granted
+    }
+  val locationPermLauncher =
+    rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+      hasLocationPermission = granted
     }
 
   // Camera launcher.
@@ -149,6 +163,15 @@ fun DisasterTriageScreen(
   DisposableEffect(Unit) {
     onDispose {
       stopRecording(audioRecordRef, audioStreamRef, recordingJobRef)
+    }
+  }
+
+  // Request location on screen entry so by the time a triage finishes the
+  // GPS fix is likely ready. Camera/mic are still requested on first use
+  // because they have a tighter UX coupling to their buttons.
+  LaunchedEffect(Unit) {
+    if (!hasLocationPermission) {
+      locationPermLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
   }
 
