@@ -9,6 +9,8 @@ package com.google.ai.edge.gallery.customtasks.disastertriage
 import ai.grg.EdgeTriageReport
 import ai.grg.RoutingContext
 import ai.grg.RoutingDecision
+import ai.grg.TriageUploader
+import ai.grg.UploadResult
 import ai.grg.decideRouting
 import ai.grg.parseEdgeReport
 import android.graphics.Bitmap
@@ -38,6 +40,18 @@ enum class TriagePhase {
   ERROR,
 }
 
+/** Where the dashboard-sync attempt for the current report stands. */
+sealed class SyncState {
+  /** No upload has been attempted (no report yet, or reset). */
+  object Idle : SyncState()
+  /** Upload is in flight. */
+  object Syncing : SyncState()
+  /** Successful POST; dashboard acknowledged at [receivedAt] (ISO timestamp). */
+  data class Synced(val receivedAt: String) : SyncState()
+  /** Last upload failed; the user can retry. */
+  data class Failed(val message: String) : SyncState()
+}
+
 data class TriageUiState(
   val phase: TriagePhase = TriagePhase.IDLE,
   val capturedBitmap: Bitmap? = null,
@@ -50,6 +64,7 @@ data class TriageUiState(
   val routing: RoutingDecision? = null,
   val errorMessage: String? = null,
   val inferenceMs: Long = 0,
+  val sync: SyncState = SyncState.Idle,
 ) {
   /** Triage can run if we have a photo, an audio clip, or both. */
   val canTriage: Boolean
@@ -204,5 +219,40 @@ class DisasterTriageViewModel @Inject constructor() : ViewModel() {
         errorMessage = null,
       )
     }
+
+    // Auto-fire a sync attempt. Result is reflected in uiState.sync; failures
+    // are non-blocking — the report is already rendered locally either way.
+    uploadReport(enriched)
+  }
+
+  /**
+   * POST the given report to the NusaSiaga dashboard via TriageUploader.
+   * Updates uiState.sync as the request progresses. Safe to call from
+   * the auto-fire path after a successful triage, or from the retry button.
+   */
+  fun uploadReport(report: EdgeTriageReport) {
+    _uiState.update { it.copy(sync = SyncState.Syncing) }
+    viewModelScope.launch(Dispatchers.IO) {
+      val result = TriageUploader.upload(report)
+      _uiState.update {
+        it.copy(
+          sync =
+            when (result) {
+              is UploadResult.Success ->
+                SyncState.Synced(receivedAt = result.receivedAt)
+              is UploadResult.HttpError ->
+                SyncState.Failed("Server error ${result.code}: ${result.message}")
+              is UploadResult.NetworkError ->
+                SyncState.Failed("Offline or network error: ${result.message}")
+            }
+        )
+      }
+    }
+  }
+
+  /** Manual retry from the result-card retry button. */
+  fun retrySync() {
+    val report = _uiState.value.report ?: return
+    uploadReport(report)
   }
 }

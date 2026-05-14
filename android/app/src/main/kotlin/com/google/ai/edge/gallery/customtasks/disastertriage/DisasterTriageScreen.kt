@@ -38,6 +38,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Camera
+import androidx.compose.material.icons.outlined.CloudDone
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Mic
@@ -213,6 +215,7 @@ fun DisasterTriageScreen(
       TriagePhase.RESULT ->
         uiState.report?.let { report ->
           ResultCard(report = report, routing = uiState.routing, elapsedMs = uiState.inferenceMs)
+          SyncStatusRow(sync = uiState.sync, onRetry = viewModel::retrySync)
           ActionRow(
             primaryLabel = "New triage",
             primaryIcon = Icons.Outlined.Refresh,
@@ -429,6 +432,91 @@ private fun AudioBlock(
     )
   }
 }
+
+@Composable
+private fun SyncStatusRow(sync: SyncState, onRetry: () -> Unit) {
+  // Resolve color & label from the sealed state.
+  val (bgColor, fgColor, label, showRetry) =
+    when (sync) {
+      is SyncState.Idle ->
+        Quad(
+          MaterialTheme.colorScheme.surfaceVariant,
+          MaterialTheme.colorScheme.onSurfaceVariant,
+          "Not synced",
+          false,
+        )
+      is SyncState.Syncing ->
+        Quad(
+          MaterialTheme.colorScheme.primaryContainer,
+          MaterialTheme.colorScheme.onPrimaryContainer,
+          "Syncing to dashboard…",
+          false,
+        )
+      is SyncState.Synced ->
+        Quad(
+          Color(0xFF2E7D32).copy(alpha = 0.20f),
+          Color(0xFF2E7D32),
+          "Synced to dashboard",
+          false,
+        )
+      is SyncState.Failed ->
+        Quad(
+          MaterialTheme.colorScheme.errorContainer,
+          MaterialTheme.colorScheme.onErrorContainer,
+          "Sync failed",
+          true,
+        )
+    }
+
+  Row(
+    modifier =
+      Modifier.fillMaxWidth()
+        .clip(RoundedCornerShape(10.dp))
+        .background(bgColor)
+        .padding(horizontal = 12.dp, vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    when (sync) {
+      is SyncState.Syncing ->
+        CircularProgressIndicator(
+          modifier = Modifier.size(14.dp),
+          strokeWidth = 2.dp,
+          color = fgColor,
+        )
+      is SyncState.Synced ->
+        Icon(Icons.Outlined.CloudDone, contentDescription = null, tint = fgColor, modifier = Modifier.size(16.dp))
+      is SyncState.Failed ->
+        Icon(Icons.Outlined.CloudOff, contentDescription = null, tint = fgColor, modifier = Modifier.size(16.dp))
+      is SyncState.Idle ->
+        Icon(Icons.Outlined.CloudOff, contentDescription = null, tint = fgColor, modifier = Modifier.size(16.dp))
+    }
+    Column(modifier = Modifier.weight(1f)) {
+      Text(label, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium, color = fgColor)
+      if (sync is SyncState.Failed) {
+        Text(
+          sync.message,
+          style = MaterialTheme.typography.labelSmall,
+          color = fgColor.copy(alpha = 0.85f),
+        )
+      } else if (sync is SyncState.Synced && sync.receivedAt.isNotEmpty()) {
+        Text(
+          "Server confirmed at ${sync.receivedAt}",
+          style = MaterialTheme.typography.labelSmall,
+          color = fgColor.copy(alpha = 0.75f),
+        )
+      }
+    }
+    if (showRetry) {
+      OutlinedButton(onClick = onRetry, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+        Text("Retry", style = MaterialTheme.typography.labelMedium)
+      }
+    }
+  }
+}
+
+/** Tiny 4-tuple helper for the row above. */
+private data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
 
 @Composable
 private fun ActionRow(
