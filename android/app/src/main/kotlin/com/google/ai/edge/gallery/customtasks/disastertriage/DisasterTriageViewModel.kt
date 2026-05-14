@@ -10,6 +10,8 @@ import ai.grg.EdgeTriageReport
 import ai.grg.LocationProvider
 import ai.grg.RoutingContext
 import ai.grg.RoutingDecision
+import ai.grg.TriageQueue
+import ai.grg.TriageSyncManager
 import ai.grg.TriageUploader
 import ai.grg.UploadResult
 import ai.grg.decideRouting
@@ -51,7 +53,16 @@ sealed class SyncState {
   object Syncing : SyncState()
   /** Successful POST; dashboard acknowledged at [receivedAt] (ISO timestamp). */
   data class Synced(val receivedAt: String) : SyncState()
-  /** Last upload failed; the user can retry. */
+  /**
+   * Couldn't reach the dashboard right now; the report is safely persisted
+   * in [TriageQueue] and will retry automatically via the connectivity
+   * callback or the periodic WorkManager job. The user can also tap retry.
+   */
+  data class Queued(val reason: String) : SyncState()
+  /**
+   * Hard failure (schema mismatch, 4xx auth) that won't be helped by a
+   * retry. Report is dropped from the queue. User can retry manually.
+   */
   data class Failed(val message: String) : SyncState()
 }
 
@@ -80,6 +91,20 @@ class DisasterTriageViewModel
 constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
   private val _uiState = MutableStateFlow(TriageUiState())
   val uiState = _uiState.asStateFlow()
+
+  /** Live pending-report queue size; consumed by the header pill in the UI. */
+  val pendingQueue = TriageQueue.pending
+
+  init {
+    // Eagerly initialise the persistent queue and kick a drain in case the
+    // app was killed last time with pending reports. Background WorkManager
+    // jobs will also keep draining when the user isn't on this screen.
+    TriageQueue.init(appContext)
+    viewModelScope.launch(Dispatchers.IO) {
+      TriageSyncManager.syncOnce()
+      TriageSyncManager.scheduleBackgroundSync(appContext)
+    }
+  }
 
   fun onPhotoCaptured(bitmap: Bitmap) {
     _uiState.update {
@@ -241,24 +266,47 @@ constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
   }
 
   /**
-   * POST the given report to the NusaSiaga dashboard via TriageUploader.
-   * Updates uiState.sync as the request progresses. Safe to call from
-   * the auto-fire path after a successful triage, or from the retry button.
+   * Persist the report in the offline queue, then attempt an immediate
+   * upload. Three outcomes:
+   *
+   *  - Success: queue entry is removed, uiState.sync = Synced.
+   *  - Network error: report stays in the queue, uiState.sync = Queued.
+   *    The connectivity callback or the periodic WorkManager job will
+   *    drain it when the radio comes back.
+   *  - Hard server error (4xx): queue entry is removed (no point keeping
+   *    a poison record), uiState.sync = Failed. User can retry manually.
+   *
+   * The background sync is scheduled unconditionally so newly-pending
+   * reports get picked up even after the user closes the app.
    */
   fun uploadReport(report: EdgeTriageReport) {
     _uiState.update { it.copy(sync = SyncState.Syncing) }
+    // Enqueue first so a process kill mid-upload doesn't lose the report.
+    TriageQueue.enqueue(report)
+    TriageSyncManager.scheduleBackgroundSync(appContext)
+
     viewModelScope.launch(Dispatchers.IO) {
       val result = TriageUploader.upload(report)
       _uiState.update {
         it.copy(
           sync =
             when (result) {
-              is UploadResult.Success ->
+              is UploadResult.Success -> {
+                TriageQueue.markUploaded(report.reportId)
                 SyncState.Synced(receivedAt = result.receivedAt)
-              is UploadResult.HttpError ->
-                SyncState.Failed("Server error ${result.code}: ${result.message}")
+              }
+              is UploadResult.HttpError -> {
+                if (result.code in listOf(400, 401, 403, 422)) {
+                  // Hard error: drop from queue, surface to user.
+                  TriageQueue.markUploaded(report.reportId)
+                  SyncState.Failed("Server rejected (${result.code}): ${result.message}")
+                } else {
+                  // Transient 5xx: leave queued, retry in background.
+                  SyncState.Queued("Server is busy (${result.code}) — will retry when reachable")
+                }
+              }
               is UploadResult.NetworkError ->
-                SyncState.Failed("Offline or network error: ${result.message}")
+                SyncState.Queued("Offline — report saved and will sync when connectivity returns")
             }
         )
       }

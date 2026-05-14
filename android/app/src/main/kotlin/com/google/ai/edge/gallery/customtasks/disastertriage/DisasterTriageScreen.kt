@@ -40,6 +40,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Camera
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Mic
@@ -81,6 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import ai.grg.TriageSyncManager
 import com.google.ai.edge.gallery.ui.modelmanager.ModelManagerViewModel
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -166,6 +168,17 @@ fun DisasterTriageScreen(
     }
   }
 
+  // Drain pending reports the moment the radio comes back. Lifecycle is
+  // scoped to this screen — when the user navigates away, we unregister.
+  // The periodic WorkManager job keeps things flowing in the background.
+  DisposableEffect(Unit) {
+    val unregister = TriageSyncManager.registerConnectivityCallback(context)
+    onDispose { unregister() }
+  }
+
+  // Live pending-queue size, for the header pill below.
+  val pendingReports by viewModel.pendingQueue.collectAsState()
+
   // Request location on screen entry so by the time a triage finishes the
   // GPS fix is likely ready. Camera/mic are still requested on first use
   // because they have a tighter UX coupling to their buttons.
@@ -185,7 +198,7 @@ fun DisasterTriageScreen(
       Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
-    HeaderBlock()
+    HeaderBlock(pendingCount = pendingReports.size)
 
     PhotoBlock(
       uiState = uiState,
@@ -262,18 +275,47 @@ private fun triageButtonLabel(state: TriageUiState): String =
   }
 
 @Composable
-private fun HeaderBlock() {
-  Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-    Text(
-      "Gemma Rescue Grid · Edge Triage",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.SemiBold,
-    )
-    Text(
-      "Offline · powered by Gemma 4 E2B · photo, voice, or both",
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+private fun HeaderBlock(pendingCount: Int) {
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
+      Text(
+        "Gemma Rescue Grid · Edge Triage",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+      )
+      Text(
+        "Offline · powered by Gemma 4 E2B · photo, voice, or both",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+    if (pendingCount > 0) {
+      Row(
+        modifier =
+          Modifier.clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFFEF6C00).copy(alpha = 0.18f))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+      ) {
+        Icon(
+          Icons.Outlined.CloudQueue,
+          contentDescription = null,
+          tint = Color(0xFFEF6C00),
+          modifier = Modifier.size(14.dp),
+        )
+        Text(
+          "$pendingCount queued",
+          style = MaterialTheme.typography.labelSmall,
+          fontWeight = FontWeight.Medium,
+          color = Color(0xFFEF6C00),
+        )
+      }
+    }
   }
 }
 
@@ -482,6 +524,13 @@ private fun SyncStatusRow(sync: SyncState, onRetry: () -> Unit) {
           "Synced to dashboard",
           false,
         )
+      is SyncState.Queued ->
+        Quad(
+          Color(0xFFEF6C00).copy(alpha = 0.20f),
+          Color(0xFFEF6C00),
+          "Queued for retry",
+          true,
+        )
       is SyncState.Failed ->
         Quad(
           MaterialTheme.colorScheme.errorContainer,
@@ -509,6 +558,8 @@ private fun SyncStatusRow(sync: SyncState, onRetry: () -> Unit) {
         )
       is SyncState.Synced ->
         Icon(Icons.Outlined.CloudDone, contentDescription = null, tint = fgColor, modifier = Modifier.size(16.dp))
+      is SyncState.Queued ->
+        Icon(Icons.Outlined.CloudQueue, contentDescription = null, tint = fgColor, modifier = Modifier.size(16.dp))
       is SyncState.Failed ->
         Icon(Icons.Outlined.CloudOff, contentDescription = null, tint = fgColor, modifier = Modifier.size(16.dp))
       is SyncState.Idle ->
@@ -519,6 +570,12 @@ private fun SyncStatusRow(sync: SyncState, onRetry: () -> Unit) {
       if (sync is SyncState.Failed) {
         Text(
           sync.message,
+          style = MaterialTheme.typography.labelSmall,
+          color = fgColor.copy(alpha = 0.85f),
+        )
+      } else if (sync is SyncState.Queued) {
+        Text(
+          sync.reason,
           style = MaterialTheme.typography.labelSmall,
           color = fgColor.copy(alpha = 0.85f),
         )
