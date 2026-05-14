@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -11,8 +12,11 @@ import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import java.util.Locale
 import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG = "LocationProvider"
@@ -95,10 +99,52 @@ object LocationProvider {
                 last
             }
 
-            fresh?.toGrgLocation() ?: GrgLocation()
+            val base = fresh?.toGrgLocation() ?: GrgLocation()
+            // Augment with a human-readable label via reverse geocoding. If
+            // geocoding fails (no network, no Google backend, throttled),
+            // we just keep the empty label and the dashboard falls back to
+            // showing the raw coordinates.
+            if (base.lat != null && base.lon != null) {
+                val label = reverseGeocode(context, base.lat, base.lon)
+                base.copy(label = label)
+            } else {
+                base
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Location fetch threw", e)
             GrgLocation()
+        }
+    }
+
+    /**
+     * Use the platform Geocoder to convert (lat, lon) into a short label.
+     * Synchronous getFromLocation is deprecated on API 33+ but still works
+     * everywhere; the async overload would require version-gating. Wrapped
+     * in withContext(IO) so the network/Play-Services call doesn't run on
+     * a calling thread that might be the main looper.
+     */
+    private suspend fun reverseGeocode(
+        context: Context,
+        lat: Double,
+        lon: Double,
+    ): String? = withContext(Dispatchers.IO) {
+        if (!Geocoder.isPresent()) return@withContext null
+        try {
+            val geocoder = Geocoder(context, Locale.getDefault())
+            @Suppress("DEPRECATION")
+            val addresses = geocoder.getFromLocation(lat, lon, 1)
+            val address = addresses?.firstOrNull() ?: return@withContext null
+            val parts =
+                listOfNotNull(
+                    address.subLocality?.takeIf { it.isNotBlank() }
+                        ?: address.locality?.takeIf { it.isNotBlank() },
+                    address.adminArea?.takeIf { it.isNotBlank() },
+                    address.countryName?.takeIf { it.isNotBlank() },
+                )
+            parts.joinToString(", ").ifBlank { null }
+        } catch (e: Exception) {
+            Log.w(TAG, "Reverse geocode failed", e)
+            null
         }
     }
 
