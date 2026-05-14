@@ -54,7 +54,13 @@ object TriageQueue {
     }
 
     fun enqueue(report: EdgeTriageReport) {
-        val p = prefs ?: return Log.w(TAG, "enqueue called before init()")
+        val p = prefs
+        if (p == null) {
+            // android.util.Log.w returns Int, which a Kotlin Unit fn can't return.
+            // So this is two statements rather than the elvis-return shortcut.
+            Log.w(TAG, "enqueue called before init()")
+            return
+        }
         val encoded = json.encodeToString(report)
         p.edit().putString(PREFIX + report.reportId, encoded).apply()
         refresh()
