@@ -50,6 +50,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Camera
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudQueue
@@ -196,6 +197,9 @@ fun DisasterTriageScreen(
   // Every locally-held report (pending / synced / ended), newest first.
   val allRecentReports by viewModel.allRecentReports.collectAsState()
   var showRecent by remember { mutableStateOf(false) }
+  // When non-null, a modal renders the QR for this row so the user can
+  // re-share an existing pending report with another phone.
+  var qrReport by remember { mutableStateOf<LocalReport?>(null) }
 
   // Inbound share intent: if the host Activity was launched (or
   // re-resumed) via ACTION_SEND with text/plain that parses as an
@@ -344,6 +348,7 @@ fun DisasterTriageScreen(
             RecentReportsList(
               reports = allRecentReports,
               onResolve = viewModel::resolveLocalReport,
+              onShowQr = { qrReport = it },
             )
           }
         }
@@ -374,6 +379,16 @@ fun DisasterTriageScreen(
       TriagePhase.ERROR -> ErrorBlock(uiState, onReset = viewModel::reset)
     }
   }
+
+  // Re-share modal for the Recent reports list. Renders the same QR
+  // payload the result-card QrShareBlock would render, with a Share
+  // button so the user can also hand it off via the Android share sheet.
+  qrReport?.let { lr ->
+    ShareReportDialog(
+      report = lr.report,
+      onDismiss = { qrReport = null },
+    )
+  }
 }
 
 @Composable
@@ -398,6 +413,7 @@ private fun RecentReportsToggle(
 private fun RecentReportsList(
   reports: List<LocalReport>,
   onResolve: (String) -> Unit,
+  onShowQr: (LocalReport) -> Unit,
 ) {
   Card(
     modifier = Modifier.fillMaxWidth(),
@@ -419,14 +435,22 @@ private fun RecentReportsList(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
       reports.forEach { local ->
-        RecentReportRow(local = local, onResolve = { onResolve(local.report.reportId) })
+        RecentReportRow(
+          local = local,
+          onResolve = { onResolve(local.report.reportId) },
+          onShowQr = { onShowQr(local) },
+        )
       }
     }
   }
 }
 
 @Composable
-private fun RecentReportRow(local: LocalReport, onResolve: () -> Unit) {
+private fun RecentReportRow(
+  local: LocalReport,
+  onResolve: () -> Unit,
+  onShowQr: () -> Unit,
+) {
   val r = local.report
   val statusColor =
     when (local.status) {
@@ -522,11 +546,124 @@ private fun RecentReportRow(local: LocalReport, onResolve: () -> Unit) {
       )
     }
     if (local.status != ReportSyncStatus.ENDED) {
-      OutlinedButton(
-        onClick = onResolve,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+      Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        IconButton(
+          onClick = onShowQr,
+          modifier = Modifier.size(32.dp),
+        ) {
+          Icon(
+            Icons.Outlined.QrCode,
+            contentDescription = "Show QR to re-share",
+            modifier = Modifier.size(18.dp),
+          )
+        }
+        IconButton(
+          onClick = onResolve,
+          modifier = Modifier.size(32.dp),
+        ) {
+          Icon(
+            Icons.Outlined.Check,
+            contentDescription = "Resolve",
+            modifier = Modifier.size(18.dp),
+            tint = Color(0xFF2E7D32),
+          )
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Modal that re-renders the QR code (and Share button) for any
+ * locally-held report. Used by the Recent reports list so a responder
+ * can hand off a previously-triaged or previously-imported report to
+ * yet another phone without going through a fresh triage.
+ */
+@Composable
+private fun ShareReportDialog(
+  report: EdgeTriageReport,
+  onDismiss: () -> Unit,
+) {
+  val context = LocalContext.current
+  val bitmap =
+    remember(report.reportId) {
+      try {
+        QrCodeRenderer.encodeReport(report = report, sizePx = 640)
+      } catch (_: Exception) {
+        null
+      }
+    }
+  androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    Card(
+      modifier = Modifier.fillMaxWidth(),
+      shape = RoundedCornerShape(16.dp),
+    ) {
+      Column(
+        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
-        Text("Resolve", style = MaterialTheme.typography.labelSmall)
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+          Text(
+            "Re-share this report",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+          )
+          IconButton(onClick = onDismiss) {
+            Icon(Icons.Outlined.Close, contentDescription = "Close")
+          }
+        }
+        Text(
+          "Sev ${report.severity} · ${disasterLabel(report.disasterType)}" +
+            (report.location.label?.let { " · $it" } ?: ""),
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (bitmap != null) {
+          Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+          ) {
+            Image(
+              bitmap = bitmap.asImageBitmap(),
+              contentDescription = "QR for ${report.reportId}",
+              modifier =
+                Modifier.size(260.dp).background(Color.White).padding(8.dp),
+            )
+          }
+        } else {
+          Text(
+            "QR encoding failed.",
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodySmall,
+          )
+        }
+        Text(
+          "Point another responder's app at this QR (Scan a report), or use the share sheet to send the JSON over Bluetooth / Nearby Share / messaging.",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          OutlinedButton(
+            onClick = { context.startActivity(shareReportIntent(report)) },
+            modifier = Modifier.weight(1f),
+          ) {
+            Icon(Icons.Outlined.Share, contentDescription = null)
+            Text("Share", modifier = Modifier.padding(start = 6.dp))
+          }
+          Button(
+            onClick = onDismiss,
+            modifier = Modifier.weight(1f),
+          ) {
+            Text("Done")
+          }
+        }
       }
     }
   }
