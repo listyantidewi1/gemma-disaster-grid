@@ -1,6 +1,6 @@
 # Gemma Rescue Grid
 
-*The Python / Android / writeup half of [**NusaSiaga · Gemma Rescue Grid**](https://github.com/NoesaaDecodes/nusasiaga) — an offline-first disaster intelligence platform built on Gemma 4, for communities anywhere.*
+*The Python / Android / writeup half of [**NusaSiaga · Gemma Rescue Grid**](https://github.com/listyantidewi1/nusasiaga) — an offline-first disaster intelligence platform built on Gemma 4, for communities anywhere. Live demo: <https://nusasiaga.vercel.app>.*
 
 When the cell tower dies, coordination dies with it. Gemma Rescue Grid puts a multimodal first responder in every pocket, then synthesizes every field report into a single operating picture the moment the signal returns. The architecture is disaster-type-agnostic — wildfire, flood, earthquake, industrial fire today; tsunami, landslide, volcanic, storm next.
 
@@ -57,16 +57,22 @@ gemma4/
     └── kaggle_writeup_outline.md        ← 1500-word writeup structure
 ```
 
-## Status — 2026-05-14
+## Status — 2026-05-15
 
 | Day | Status |
 |---|---|
 | Day 1 — 13 May | ✅ Foundation: schemas, prompts, three scenarios, routing, Colab notebook end-to-end. Synthesis verified on Gemma 4 E4B. Dual-track NusaSiaga dashboard with unified disaster-type picker. Kotlin domain scaffold. Writeup v0.5 (1573 words). Bilingual team plan. |
 | Day 2 — 14 May | ✅ Shipped. Android Studio installed, gallery forked, sync clean, build passes. `gemma-4-E2B-it` confirmed available in gallery picker without HuggingFace OAuth. First multimodal inference verified on Samsung Galaxy A71 (2020 mid-range, Snapdragon 730, no NPU). |
-| Day 3 — 14 May (one day ahead of plan) | ✅ Shipped tri-modal. Edge tier functionally complete in **all three input modes**: photo-only, voice-only, and photo+voice combined. Validated `EdgeTriageReport` JSON output from our locked system prompt on Galaxy A71 (first-shot valid; all enum, range, and length constraints respected). Built four Kotlin files for a "Disaster Triage" custom task in the gallery fork — Hilt-discovered tile, photo capture, voice capture (16 kHz mono PCM wrapped in RIFF/WAVE header for LiteRT-LM's miniaudio decoder), streaming inference, parsed result card with severity badge / hazards chips / immediate-action callout / fast-or-deep-lane routing decision. Patched the gallery's model registry to attach any image-capable LLM to our task ID. System prompt revised to handle all three modality combinations without changing the validated JSON contract. End-to-end verified on device. |
+| Day 3 — 14 May (one day ahead of plan) | ✅ Shipped tri-modal. Edge tier functionally complete in **all three input modes**: photo-only, voice-only, and photo+voice combined. Validated `EdgeTriageReport` JSON output from our locked system prompt on Galaxy A71 (first-shot valid; all enum, range, and length constraints respected). Four Kotlin files for a "Disaster Triage" custom task in the gallery fork — Hilt-discovered tile, photo capture, voice capture (16 kHz mono PCM in a RIFF/WAVE wrapper for LiteRT-LM's miniaudio decoder), streaming inference, parsed result card. System prompt revised to handle all three modality combinations without changing the validated JSON contract. |
+| Day 3+ — 15 May (overshoot) | ✅ **Full live phone → dashboard pipeline**: `/api/reports` route on the dashboard with **Upstash Redis** storage, Android `TriageUploader` doing HTTPS POST with shared-secret auth, dashboard's **IncomingReportsPanel** + **live pin overlay on the FloodMap** (pulsing rings vs solid scenario pins). **Offline-first sync stack**: SharedPreferences-backed `TriageQueue`, `TriageSyncManager` with `ConnectivityManager.NetworkCallback` for opportunistic drain, `SyncWorker` (WorkManager with `NetworkType.CONNECTED`, 30-min periodic + expedited one-time) so the queue drains even after the app is killed. New `SyncState.Queued` UI state + pending-count pill in the app header. **GPS + reverse geocoding** stamped on every report. **App rebrand**: name "Gemma Rescue Grid", red warning-triangle adaptive icon, single-tile home (Disaster Triage only). **Dashboard restructure**: dropped scenario picker, unified operational map merging all three pre-baked scenarios + live phone uploads with disaster-type chip filters, two-mode toggle (Triage Operations / Wildfire Monitoring). **Global FIRMS**: bbox widened from Indonesia-only to worldwide, continental fallback regions, top-500-FRP cap. **Live EnvironmentStats**: Open-Meteo AQI + wind anchored at the user's location, CO₂ estimate computed from FIRMS FRP totals (peatland-weighted), severity-bucket priority. **IncidentFeed pivoted to real**: FIRMS hotspots ranked by severity × proximity to viewer. **User location resolution**: GPS → IP (ipapi.co) → Jakarta default. |
 | Day 4 — 16 May | Kaggle quota resets. Run notebook on 2× T4 with `unsloth/gemma-4-31B-it` for all three scenarios. Drop synthesis JSON into NusaSiaga; flip B and C from `pending` to `generated`. |
 | Day 5 — 17 May | Film 3-min video. Optional Unsloth fine-tune. Optional wildfire user-report scenario. |
 | Day 6 — 18 May | Trim writeup to ≤1500 words, dry run, **submit before 11:59 PM UTC**. |
+
+## What you can interact with right now
+
+- **Live demo**: <https://nusasiaga.vercel.app> — unified operational map with disaster-type chip filters, live phone uploads landing in <10 s, live AQI/wind anchored to your browser's geolocation, global NASA FIRMS satellite hotspots. The map's "Fit to all" toggle zooms out across continents when reports land from outside the scenario region.
+- **APK**: install the gallery fork from `listyantidewi1/gallery` onto any Android phone with ~3 GB free. The app is named **Gemma Rescue Grid**, opens to a single Disaster Triage tile, runs Gemma 4 E2B fully offline. Snap a photo, record a voice note, or both — the resulting triage JSON uploads to the dashboard within ~10 s of getting connectivity (saved locally and retried in the background via WorkManager if offline).
 
 ## License
 
