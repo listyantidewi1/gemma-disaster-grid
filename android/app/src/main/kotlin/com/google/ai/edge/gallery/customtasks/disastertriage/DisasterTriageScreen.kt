@@ -9,8 +9,13 @@ package com.google.ai.edge.gallery.customtasks.disastertriage
 import ai.grg.DisasterType
 import ai.grg.EdgeTriageReport
 import ai.grg.EvacuationPriority
+import ai.grg.QrCodeRenderer
+import ai.grg.QrCodeScanContract
 import ai.grg.RoutingDecision
 import ai.grg.RoutingRecommendation
+import ai.grg.ScanResult
+import ai.grg.TriageQueue
+import ai.grg.TriageSyncManager
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -45,6 +50,8 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.QrCode
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.AssistChip
@@ -179,6 +186,28 @@ fun DisasterTriageScreen(
   // Live pending-queue size, for the header pill below.
   val pendingReports by viewModel.pendingQueue.collectAsState()
 
+  // QR-mesh scanner. The launcher takes a ScanOptions and returns our
+  // sealed ScanResult; on success we enqueue the imported report into the
+  // local queue + schedule a background sync. This is how a phone with no
+  // connectivity hands a report to another phone (the other phone scans
+  // this one's screen) without any radio or pairing.
+  var scanFeedback by remember { mutableStateOf<String?>(null) }
+  val scanLauncher =
+    rememberLauncherForActivityResult(QrCodeScanContract()) { result ->
+      when (result) {
+        is ScanResult.Report -> {
+          TriageQueue.init(context.applicationContext)
+          TriageQueue.enqueue(result.report)
+          TriageSyncManager.scheduleBackgroundSync(context.applicationContext)
+          scanFeedback =
+            "Imported report ${result.report.reportId.take(14)}…  · queued for sync"
+        }
+        is ScanResult.NotARport ->
+          scanFeedback = "Scanned QR isn't a triage report (${result.reason})."
+        is ScanResult.Cancelled -> { /* no toast */ }
+      }
+    }
+
   // Request location on screen entry so by the time a triage finishes the
   // GPS fix is likely ready. Camera/mic are still requested on first use
   // because they have a tighter UX coupling to their buttons.
@@ -238,7 +267,14 @@ fun DisasterTriageScreen(
     )
 
     when (uiState.phase) {
-      TriagePhase.IDLE -> InstructionsBlock()
+      TriagePhase.IDLE -> {
+        InstructionsBlock()
+        ScanRow(
+          onScan = { scanLauncher.launch(QrCodeScanContract.defaultOptions()) },
+          feedback = scanFeedback,
+          onDismissFeedback = { scanFeedback = null },
+        )
+      }
       TriagePhase.CAPTURED ->
         ActionRow(
           primaryLabel = triageButtonLabel(uiState),
@@ -252,6 +288,7 @@ fun DisasterTriageScreen(
         uiState.report?.let { report ->
           ResultCard(report = report, routing = uiState.routing, elapsedMs = uiState.inferenceMs)
           SyncStatusRow(sync = uiState.sync, onRetry = viewModel::retrySync)
+          QrShareBlock(report = report)
           ActionRow(
             primaryLabel = "New triage",
             primaryIcon = Icons.Outlined.Refresh,
@@ -262,6 +299,114 @@ fun DisasterTriageScreen(
           RawOutputBlock(uiState.rawOutput)
         }
       TriagePhase.ERROR -> ErrorBlock(uiState, onReset = viewModel::reset)
+    }
+  }
+}
+
+@Composable
+private fun ScanRow(
+  onScan: () -> Unit,
+  feedback: String?,
+  onDismissFeedback: () -> Unit,
+) {
+  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    OutlinedButton(
+      onClick = onScan,
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Icon(Icons.Outlined.QrCodeScanner, contentDescription = null)
+      Text(
+        "Scan a report from another responder",
+        modifier = Modifier.padding(start = 8.dp),
+      )
+    }
+    if (feedback != null) {
+      Row(
+        modifier =
+          Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Text(
+          feedback,
+          modifier = Modifier.weight(1f),
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
+        IconButton(onClick = onDismissFeedback) {
+          Icon(Icons.Outlined.Close, contentDescription = "Dismiss")
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun QrShareBlock(report: EdgeTriageReport) {
+  // ZXing encoding is pure CPU; memoise so we only render the QR once
+  // per report, not on every recomposition.
+  val bitmap =
+    remember(report.reportId) {
+      try {
+        QrCodeRenderer.encodeReport(report = report, sizePx = 640)
+      } catch (e: Exception) {
+        Log.w(TAG, "QR encode failed", e)
+        null
+      }
+    }
+
+  Card(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(12.dp),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        Icon(
+          Icons.Outlined.QrCode,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+          "Hand off to another responder",
+          style = MaterialTheme.typography.titleSmall,
+          fontWeight = FontWeight.SemiBold,
+        )
+      }
+      Text(
+        "Have them open this app, tap \"Scan a report\", and point at this screen. The full triage transfers without any network — they can sync it to the dashboard from their phone when they get connectivity.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      if (bitmap != null) {
+        Box(
+          modifier =
+            Modifier.fillMaxWidth()
+              .padding(top = 4.dp),
+          contentAlignment = Alignment.Center,
+        ) {
+          Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "QR code for this triage report",
+            modifier = Modifier.size(280.dp).background(Color.White).padding(8.dp),
+          )
+        }
+      } else {
+        Text(
+          "QR encoding failed.",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.error,
+        )
+      }
     }
   }
 }
