@@ -21,11 +21,15 @@ import ai.grg.TriageQueue
 import ai.grg.TriageSyncManager
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -56,6 +60,7 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -191,6 +196,38 @@ fun DisasterTriageScreen(
   // Every locally-held report (pending / synced / ended), newest first.
   val allRecentReports by viewModel.allRecentReports.collectAsState()
   var showRecent by remember { mutableStateOf(false) }
+
+  // Inbound share intent: if the host Activity was launched (or
+  // re-resumed) via ACTION_SEND with text/plain that parses as an
+  // EdgeTriageReport, ingest it the same way a QR scan would. Runs once
+  // per Activity intent — we mutate the intent's action to consume it so
+  // recomposition / config-change doesn't re-import.
+  LaunchedEffect(Unit) {
+    val activity = context as? Activity ?: return@LaunchedEffect
+    val launchIntent = activity.intent ?: return@LaunchedEffect
+    if (launchIntent.action != Intent.ACTION_SEND) return@LaunchedEffect
+    val text = launchIntent.getStringExtra(Intent.EXTRA_TEXT)
+    if (text.isNullOrBlank()) return@LaunchedEffect
+    val parsed = QrCodeScanContract.tryParseReport(text)
+    if (parsed is ScanResult.Report) {
+      TriageQueue.init(context.applicationContext)
+      TriageQueue.enqueue(parsed.report, source = ReportSource.SHARE)
+      TriageSyncManager.scheduleBackgroundSync(context.applicationContext)
+      scanFeedback =
+        "Imported report ${parsed.report.reportId.take(14)}… via Share — syncing now"
+      coroutineScope.launch(Dispatchers.IO) {
+        val syncResult = TriageSyncManager.syncOnce()
+        scanFeedback =
+          if (syncResult.uploaded > 0)
+            "Imported report ${parsed.report.reportId.take(14)}… via Share — uploaded to dashboard"
+          else
+            "Imported report ${parsed.report.reportId.take(14)}… via Share — queued (network unreachable)"
+      }
+      // Consume the intent so a configuration change (rotation, dark
+      // mode toggle) doesn't re-import the same payload.
+      launchIntent.action = Intent.ACTION_MAIN
+    }
+  }
 
   // QR-mesh scanner. The launcher takes a ScanOptions and returns our
   // sealed ScanResult; on success we enqueue the imported report into the
@@ -536,6 +573,33 @@ private fun ScanRow(
   }
 }
 
+/**
+ * Build an ACTION_SEND chooser intent carrying the report's JSON as
+ * EXTRA_TEXT. Receiving app (Bluetooth, Nearby Share, Signal, Drive,
+ * email, etc.) sees plain text; if it's our own app on another device,
+ * the manifest intent-filter routes the payload back into the
+ * DisasterTriage screen and DisasterTriageScreen's LaunchedEffect
+ * (above) ingests it.
+ */
+private val shareJson = Json {
+  encodeDefaults = true
+  ignoreUnknownKeys = true
+}
+
+private fun shareReportIntent(report: EdgeTriageReport): Intent {
+  val payload = shareJson.encodeToString(report)
+  val send =
+    Intent(Intent.ACTION_SEND).apply {
+      type = "text/plain"
+      putExtra(Intent.EXTRA_TEXT, payload)
+      putExtra(
+        Intent.EXTRA_SUBJECT,
+        "Gemma Rescue Grid · triage ${report.reportId.take(14)}",
+      )
+    }
+  return Intent.createChooser(send, "Send triage report to another responder")
+}
+
 @Composable
 private fun QrShareBlock(report: EdgeTriageReport) {
   // ZXing encoding is pure CPU; memoise so we only render the QR once
@@ -559,23 +623,47 @@ private fun QrShareBlock(report: EdgeTriageReport) {
       modifier = Modifier.padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+      val context = LocalContext.current
       Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
       ) {
-        Icon(
-          Icons.Outlined.QrCode,
-          contentDescription = null,
-          tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-          "Hand off to another responder",
-          style = MaterialTheme.typography.titleSmall,
-          fontWeight = FontWeight.SemiBold,
-        )
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Icon(
+            Icons.Outlined.QrCode,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+          Text(
+            "Hand off to another responder",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+          )
+        }
+        OutlinedButton(
+          onClick = { context.startActivity(shareReportIntent(report)) },
+          contentPadding =
+            androidx.compose.foundation.layout.PaddingValues(
+              horizontal = 12.dp,
+              vertical = 4.dp,
+            ),
+        ) {
+          Icon(Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(14.dp))
+          Text(
+            "Share",
+            modifier = Modifier.padding(start = 6.dp),
+            style = MaterialTheme.typography.labelMedium,
+          )
+        }
       }
       Text(
-        "Have them open this app, tap \"Scan a report\", and point at this screen. The full triage transfers without any network — they can sync it to the dashboard from their phone when they get connectivity.",
+        "Two ways to hand this report off without going through the dashboard:\n" +
+          "• Have them point their app's scanner at this QR code (no network needed).\n" +
+          "• Tap Share to send the JSON via Bluetooth, Nearby Share, Signal, Drive, or any other channel — the recipient's app ingests it on open.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
