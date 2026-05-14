@@ -34,6 +34,8 @@ The "CPU-bound 30-60 second" latency on a 5-year-old mid-range phone **is the Gl
 5. Toggle airplane mode off. Within ~5 s the connectivity callback fires, the queue drains, chips go green, dashboard fills in.
 6. (Bonus, for the writeup) Force-quit *while* offline, then turn wifi on without reopening. Within ~15–30 minutes the periodic `WorkManager` job drains the queue with the app closed.
 
+A fuller per-feature test matrix — including QR-mesh peer hand-off, share-intent receive path, server-side dedup, and reporter-vs-crowd resolve — lives in [`docs/TESTING.md`](../docs/TESTING.md). The judges' zero-to-working onboarding guide is at [`docs/HOW-TO.md`](../docs/HOW-TO.md).
+
 ---
 
 ## Drop-in Kotlin domain layer
