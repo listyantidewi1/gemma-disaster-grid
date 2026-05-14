@@ -102,6 +102,44 @@ object TriageUploader {
         }
     }
 
+    /**
+     * Mark a report as ended on the dashboard. Returns true on 2xx (the
+     * server confirmed the resolution; we can mark it locally as fully
+     * resolved). Returns false on auth failure, 404 (report not on the
+     * server — common if the user resolves before the upload reaches the
+     * dashboard), or network error. Caller decides whether to retry.
+     */
+    suspend fun patchResolve(reportId: String): Boolean =
+        withContext(Dispatchers.IO) {
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL("${TriageConfig.INGEST_URL}/$reportId")
+                connection = (url.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "PATCH"
+                    connectTimeout = TriageConfig.CONNECT_TIMEOUT_MS
+                    readTimeout = TriageConfig.READ_TIMEOUT_MS
+                    doOutput = true
+                    setRequestProperty(
+                        "Content-Type",
+                        "application/json; charset=utf-8",
+                    )
+                    setRequestProperty("X-Triage-Token", TriageConfig.INGEST_TOKEN)
+                    setRequestProperty("Accept", "application/json")
+                }
+                connection.outputStream.use { out ->
+                    out.write("""{"status":"ended"}""".toByteArray(Charsets.UTF_8))
+                }
+                val code = connection.responseCode
+                Log.d(TAG, "patchResolve($reportId) -> $code")
+                code in 200..299
+            } catch (e: Exception) {
+                Log.w(TAG, "patchResolve threw", e)
+                false
+            } finally {
+                connection?.disconnect()
+            }
+        }
+
     private fun parseReceivedAt(body: String): String? {
         if (body.isBlank()) return null
         return try {

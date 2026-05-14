@@ -66,27 +66,31 @@ object TriageSyncManager {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     suspend fun syncOnce(): SyncResult {
-        val pending = TriageQueue.snapshot()
+        val pending = TriageQueue.pendingSnapshot()
         if (pending.isEmpty()) return SyncResult(0, 0, 0)
 
         var uploaded = 0
         var dropped = 0
-        for (report in pending) {
+        for (local in pending) {
+            val report = local.report
             when (val result = TriageUploader.upload(report)) {
                 is UploadResult.Success -> {
-                    TriageQueue.markUploaded(report.reportId)
+                    // Doesn't remove — flips status to SYNCED so the user
+                    // can still see the row in their Recent reports list.
+                    TriageQueue.markSynced(report.reportId)
                     uploaded++
                 }
 
                 is UploadResult.HttpError -> {
                     if (result.code in listOf(400, 401, 403, 422)) {
-                        // Hard error — retrying won't help. Drop from queue
-                        // so we don't loop forever on a poison record.
+                        // Hard error — retrying won't help. Drop the row
+                        // entirely so we don't loop forever on a poison
+                        // record and so it doesn't clutter Recent reports.
                         Log.w(
                             TAG,
                             "Dropping ${report.reportId} from queue: ${result.code} ${result.message}",
                         )
-                        TriageQueue.markUploaded(report.reportId)
+                        TriageQueue.forget(report.reportId)
                         dropped++
                     }
                     // 5xx: leave in queue for the next drain. Don't try
@@ -102,7 +106,7 @@ object TriageSyncManager {
                 }
             }
         }
-        val stillQueued = TriageQueue.snapshot().size
+        val stillQueued = TriageQueue.pendingSnapshot().size
         Log.d(TAG, "syncOnce: uploaded=$uploaded dropped=$dropped stillQueued=$stillQueued")
         return SyncResult(uploaded = uploaded, dropped = dropped, stillQueued = stillQueued)
     }

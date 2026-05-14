@@ -9,8 +9,11 @@ package com.google.ai.edge.gallery.customtasks.disastertriage
 import ai.grg.DisasterType
 import ai.grg.EdgeTriageReport
 import ai.grg.EvacuationPriority
+import ai.grg.LocalReport
 import ai.grg.QrCodeRenderer
 import ai.grg.QrCodeScanContract
+import ai.grg.ReportSource
+import ai.grg.ReportSyncStatus
 import ai.grg.RoutingDecision
 import ai.grg.RoutingRecommendation
 import ai.grg.ScanResult
@@ -185,6 +188,10 @@ fun DisasterTriageScreen(
   // Live pending-queue size, for the header pill below.
   val pendingReports by viewModel.pendingQueue.collectAsState()
 
+  // Every locally-held report (pending / synced / ended), newest first.
+  val allRecentReports by viewModel.allRecentReports.collectAsState()
+  var showRecent by remember { mutableStateOf(false) }
+
   // QR-mesh scanner. The launcher takes a ScanOptions and returns our
   // sealed ScanResult; on success we enqueue the imported report into the
   // local queue + schedule a background sync. This is how a phone with no
@@ -196,7 +203,9 @@ fun DisasterTriageScreen(
       when (result) {
         is ScanResult.Report -> {
           TriageQueue.init(context.applicationContext)
-          TriageQueue.enqueue(result.report)
+          // ReportSource.QR so the Recent reports list can render the
+          // 'scanned from another responder' provenance badge.
+          TriageQueue.enqueue(result.report, source = ReportSource.QR)
           // Schedule the background WorkManager job so the report survives
           // a process kill, AND fire an immediate foreground sync so the
           // user sees the report land on the dashboard without waiting for
@@ -288,6 +297,19 @@ fun DisasterTriageScreen(
           feedback = scanFeedback,
           onDismissFeedback = { scanFeedback = null },
         )
+        if (allRecentReports.isNotEmpty()) {
+          RecentReportsToggle(
+            count = allRecentReports.size,
+            showing = showRecent,
+            onClick = { showRecent = !showRecent },
+          )
+          if (showRecent) {
+            RecentReportsList(
+              reports = allRecentReports,
+              onResolve = viewModel::resolveLocalReport,
+            )
+          }
+        }
       }
       TriagePhase.CAPTURED ->
         ActionRow(
@@ -313,6 +335,162 @@ fun DisasterTriageScreen(
           RawOutputBlock(uiState.rawOutput)
         }
       TriagePhase.ERROR -> ErrorBlock(uiState, onReset = viewModel::reset)
+    }
+  }
+}
+
+@Composable
+private fun RecentReportsToggle(
+  count: Int,
+  showing: Boolean,
+  onClick: () -> Unit,
+) {
+  OutlinedButton(
+    onClick = onClick,
+    modifier = Modifier.fillMaxWidth(),
+  ) {
+    Icon(Icons.Outlined.Refresh, contentDescription = null)
+    Text(
+      if (showing) "Hide recent reports" else "View recent reports ($count)",
+      modifier = Modifier.padding(start = 8.dp),
+    )
+  }
+}
+
+@Composable
+private fun RecentReportsList(
+  reports: List<LocalReport>,
+  onResolve: (String) -> Unit,
+) {
+  Card(
+    modifier = Modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(12.dp),
+    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+  ) {
+    Column(
+      modifier = Modifier.padding(12.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Text(
+        "Recent reports on this phone",
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
+      )
+      Text(
+        "Everything you've triaged or imported. Works offline — these rows live on the phone and sync to the dashboard when connectivity returns.",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      reports.forEach { local ->
+        RecentReportRow(local = local, onResolve = { onResolve(local.report.reportId) })
+      }
+    }
+  }
+}
+
+@Composable
+private fun RecentReportRow(local: LocalReport, onResolve: () -> Unit) {
+  val r = local.report
+  val statusColor =
+    when (local.status) {
+      ReportSyncStatus.PENDING -> Color(0xFFEF6C00)
+      ReportSyncStatus.SYNCED -> Color(0xFF2E7D32)
+      ReportSyncStatus.ENDED ->
+        if (local.serverConfirmedResolution) Color(0xFF455A64)
+        else Color(0xFF9E9E9E)
+    }
+  val statusLabel =
+    when (local.status) {
+      ReportSyncStatus.PENDING -> "PENDING"
+      ReportSyncStatus.SYNCED -> "SYNCED"
+      ReportSyncStatus.ENDED ->
+        if (local.serverConfirmedResolution) "RESOLVED"
+        else "RESOLVED (sync pending)"
+    }
+  val sourceLabel =
+    when (local.source) {
+      ReportSource.SELF -> "self"
+      ReportSource.QR -> "scanned"
+      ReportSource.SHARE -> "shared"
+    }
+  Row(
+    modifier =
+      Modifier.fillMaxWidth()
+        .clip(RoundedCornerShape(8.dp))
+        .background(MaterialTheme.colorScheme.surface)
+        .padding(10.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(10.dp),
+  ) {
+    // Severity badge.
+    Box(
+      modifier =
+        Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(
+          when (r.severity) {
+            5 -> Color(0xFFB71C1C)
+            4 -> Color(0xFFD84315)
+            3 -> Color(0xFFEF6C00)
+            2 -> Color(0xFF9E9D24)
+            else -> Color(0xFF2E7D32)
+          },
+        ),
+      contentAlignment = Alignment.Center,
+    ) {
+      Text(
+        r.severity.toString(),
+        color = Color.White,
+        fontWeight = FontWeight.Bold,
+      )
+    }
+    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+      ) {
+        Text(
+          disasterLabel(r.disasterType),
+          style = MaterialTheme.typography.bodyMedium,
+          fontWeight = FontWeight.Medium,
+        )
+        Box(
+          modifier =
+            Modifier.clip(RoundedCornerShape(4.dp))
+              .background(statusColor.copy(alpha = 0.20f))
+              .padding(horizontal = 6.dp, vertical = 1.dp),
+        ) {
+          Text(
+            statusLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = statusColor,
+            fontWeight = FontWeight.Bold,
+          )
+        }
+        Text(
+          "· $sourceLabel",
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
+      Text(
+        r.location.label ?: "location unknown",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+      )
+      Text(
+        r.immediateAction,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 2,
+      )
+    }
+    if (local.status != ReportSyncStatus.ENDED) {
+      OutlinedButton(
+        onClick = onResolve,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+      ) {
+        Text("Resolve", style = MaterialTheme.typography.labelSmall)
+      }
     }
   }
 }

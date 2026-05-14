@@ -92,8 +92,29 @@ constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
   private val _uiState = MutableStateFlow(TriageUiState())
   val uiState = _uiState.asStateFlow()
 
-  /** Live pending-report queue size; consumed by the header pill in the UI. */
+  /** Live pending-report queue; the header pill uses `.size`. */
   val pendingQueue = TriageQueue.pending
+
+  /** Every locally-stored report (pending / synced / ended), newest
+   *  capturedAt first. The "Recent reports" view subscribes here. */
+  val allRecentReports = TriageQueue.all
+
+  /**
+   * Drive the local-resolve flow. Flips the in-memory state immediately
+   * so the UI looks instant; the PATCH to the server is best-effort and
+   * happens on Dispatchers.IO. If we're offline, the local row stays in
+   * ENDED status with serverConfirmedResolution = false until the next
+   * sync attempt picks it up (TODO: wire that into TriageSyncManager).
+   */
+  fun resolveLocalReport(reportId: String) {
+    TriageQueue.markEnded(reportId)
+    viewModelScope.launch(Dispatchers.IO) {
+      val ok = TriageUploader.patchResolve(reportId)
+      if (ok) {
+        TriageQueue.markServerConfirmedResolution(reportId)
+      }
+    }
+  }
 
   init {
     // Eagerly initialise the persistent queue and kick a drain in case the
@@ -292,13 +313,13 @@ constructor(@ApplicationContext private val appContext: Context) : ViewModel() {
           sync =
             when (result) {
               is UploadResult.Success -> {
-                TriageQueue.markUploaded(report.reportId)
+                TriageQueue.markSynced(report.reportId)
                 SyncState.Synced(receivedAt = result.receivedAt)
               }
               is UploadResult.HttpError -> {
                 if (result.code in listOf(400, 401, 403, 422)) {
                   // Hard error: drop from queue, surface to user.
-                  TriageQueue.markUploaded(report.reportId)
+                  TriageQueue.markSynced(report.reportId)
                   SyncState.Failed("Server rejected (${result.code}): ${result.message}")
                 } else {
                   // Transient 5xx: leave queued, retry in background.
