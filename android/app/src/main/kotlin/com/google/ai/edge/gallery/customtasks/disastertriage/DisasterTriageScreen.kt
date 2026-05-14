@@ -197,9 +197,24 @@ fun DisasterTriageScreen(
         is ScanResult.Report -> {
           TriageQueue.init(context.applicationContext)
           TriageQueue.enqueue(result.report)
+          // Schedule the background WorkManager job so the report survives
+          // a process kill, AND fire an immediate foreground sync so the
+          // user sees the report land on the dashboard without waiting for
+          // WorkManager's scheduling latency.
           TriageSyncManager.scheduleBackgroundSync(context.applicationContext)
           scanFeedback =
-            "Imported report ${result.report.reportId.take(14)}…  · queued for sync"
+            "Imported report ${result.report.reportId.take(14)}…  · syncing now"
+          coroutineScope.launch(Dispatchers.IO) {
+            val syncResult = TriageSyncManager.syncOnce()
+            scanFeedback =
+              if (syncResult.uploaded > 0) {
+                "Imported report ${result.report.reportId.take(14)}…  · uploaded to dashboard"
+              } else if (syncResult.stillQueued > 0) {
+                "Imported report ${result.report.reportId.take(14)}…  · queued (network unreachable)"
+              } else {
+                "Imported report ${result.report.reportId.take(14)}…  · processed"
+              }
+          }
         }
         is ScanResult.NotARport ->
           scanFeedback = "Scanned QR isn't a triage report (${result.reason})."
