@@ -1,4 +1,4 @@
-# NusaSiaga · Gemma Rescue Grid — Rencana Tim (Bahasa Indonesia)
+# NusaSiaga · Gemma Disaster Grid — Rencana Tim (Bahasa Indonesia)
 
 > *Versi Inggris: [`TEAM_PLAN.en.md`](TEAM_PLAN.en.md)*
 
@@ -8,7 +8,7 @@ Dokumen ini merupakan sumber acuan utama bagi tim selama pengerjaan submission u
 
 ## 1. Ringkasan 60 detik
 
-Kita sedang membangun **NusaSiaga · Gemma Rescue Grid**, sebuah platform intelijen bencana *offline-first* yang ditenagai Gemma 4. Sistem ini merupakan satu produk dengan tiga tier yang berbagi satu kontrak JSON dari ujung ke ujung:
+Kita sedang membangun **Gemma Disaster Grid**, sebuah platform intelijen bencana *offline-first* yang ditenagai Gemma 4 dan di-deploy secara menyeluruh sebagai aplikasi Android **Gemma Rescue Grid** beserta dashboard web **NusaSiaga · Gemma Disaster Grid**. Sistem ini merupakan satu produk dengan tiga tier yang berbagi satu kontrak JSON dari ujung ke ujung:
 
 1. **Aplikasi Android** yang menjalankan Gemma 4 E2B pada perangkat. Responden lapangan mengambil foto (opsional disertai catatan suara atau teks), kemudian model menghasilkan laporan triase bencana yang terstruktur dalam waktu kurang dari lima detik. **Sepenuhnya offline. Tidak memerlukan koneksi internet.**
 2. **Notebook Kaggle** yang menjalankan Gemma 4 31B di cloud. Pada saat perangkat memperoleh konektivitas, laporan-laporan yang berada di antrean disinkronisasi ke sini untuk proses sintesis lintas laporan: priority zones, ranked actions, dan validity flags. Keluarga model Gemma 4 yang sama, dengan ukuran lebih besar dan kapasitas reasoning yang lebih mendalam.
@@ -120,7 +120,7 @@ Keputusan arsitektural berikut disertakan sebagai informasi untuk konteks.
 
 Pada saat juri atau koordinator membuka URL yang telah di-deploy, berikut adalah tampilan yang akan dilihat:
 
-**Di bagian paling atas:** brand header bertuliskan "NusaSiaga · Gemma Rescue Grid" dengan subtitle "Wildfire monitoring · Offline-edge flood response · Powered by Gemma 4" serta badge "Offline-First Demo".
+**Di bagian paling atas:** brand header bertuliskan "NusaSiaga · Gemma Disaster Grid" dengan subtitle "Wildfire monitoring · Offline-edge flood response · Powered by Gemma 4" serta badge "Offline-First Demo".
 
 **Tepat di bawahnya:** satu disaster-type picker yang terpadu (berupa kartu dropdown). Picker ini memiliki nilai default "Flood" — skenario yang sintesisnya telah siap. Apabila diklik, akan ter-expand menjadi empat opsi:
 

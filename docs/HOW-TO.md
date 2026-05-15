@@ -1,4 +1,6 @@
-# HOW-TO — Run Gemma Rescue Grid yourself
+# HOW-TO — Run Gemma Disaster Grid yourself
+
+*The platform is **Gemma Disaster Grid**. The Android app is **Gemma Rescue Grid**. The dashboard is **NusaSiaga · Gemma Disaster Grid**.*
 
 A compact onboarding guide for hackathon judges. **TESTING.md** is the per-feature verification matrix; this doc is the "how do I get from zero to a working setup" walkthrough.
 

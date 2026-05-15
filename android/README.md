@@ -1,6 +1,6 @@
 # Gemma Rescue Grid — Android edge tier
 
-The on-device tier of the Gemma Rescue Grid architecture. Runs Gemma 4 E2B fully offline via Google AI Edge LiteRT on a responder's phone, accepting a photograph plus optional voice or text annotation and emitting a structured `EdgeTriageReport` JSON object in under 5 seconds on a Snapdragon 8 Gen 2-class device.
+The on-device tier of the **Gemma Disaster Grid** architecture, shipped as the **Gemma Rescue Grid** Android app. Runs Gemma 4 E2B fully offline via Google AI Edge LiteRT on a responder's phone, accepting a photograph plus optional voice or text annotation and emitting a structured `EdgeTriageReport` JSON object in under 5 seconds on a Snapdragon 8 Gen 2-class device.
 
 This is the **field-responder** half of the system. The other half (cloud-tier 31B synthesis) lives in [`notebook/gemma_rescue_grid.ipynb`](../notebook/gemma_rescue_grid.ipynb).
 

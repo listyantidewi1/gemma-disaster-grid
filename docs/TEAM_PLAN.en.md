@@ -1,4 +1,4 @@
-# NusaSiaga · Gemma Rescue Grid — Team Plan (English)
+# NusaSiaga · Gemma Disaster Grid — Team Plan (English)
 
 > *Indonesian version: [`TEAM_PLAN.id.md`](TEAM_PLAN.id.md)*
 
@@ -8,7 +8,7 @@ A single source of truth for the team while we ship the Kaggle Gemma 4 Good Hack
 
 ## 1. The 60-second version
 
-We are building **NusaSiaga · Gemma Rescue Grid**, an offline-first disaster intelligence platform powered by Gemma 4. It is one product with three tiers that share one JSON contract:
+We are building **Gemma Disaster Grid**, an offline-first disaster intelligence platform powered by Gemma 4, deployed end-to-end as the **Gemma Rescue Grid** Android app and the **NusaSiaga · Gemma Disaster Grid** web dashboard. It is one product with three tiers that share one JSON contract:
 
 1. **An Android app** running Gemma 4 E2B on the phone. A field responder takes a photograph (optionally adds a voice note or text), and the model produces a structured disaster-triage report in under five seconds. **Fully offline. No internet needed.**
 2. **A Kaggle notebook** running Gemma 4 31B in the cloud. When the phone gets connectivity, queued reports flow here for cross-report synthesis: priority zones, ranked actions, validity flags. Same Gemma 4 family, larger model, more reasoning.
@@ -120,7 +120,7 @@ Architectural decisions, in case anyone wonders.
 
 When a judge or coordinator opens the deployed URL, here is what they see:
 
-**At the top:** the brand header "NusaSiaga · Gemma Rescue Grid" with a subtitle "Wildfire monitoring · Offline-edge flood response · Powered by Gemma 4" and an "Offline-First Demo" badge.
+**At the top:** the brand header "NusaSiaga · Gemma Disaster Grid" with a subtitle "Wildfire monitoring · Offline-edge flood response · Powered by Gemma 4" and an "Offline-First Demo" badge.
 
 **Just below:** a single unified disaster-type picker (a dropdown card). It defaults to "Flood" — the scenario with synthesis ready. Clicking it expands to four options:
 

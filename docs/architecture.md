@@ -2,7 +2,7 @@
 
 ## The core insight: same family, different deployment
 
-The Gemma 4 family ships four variants that span deployment scenarios from $200 phones to multi-GPU workstations. Gemma Rescue Grid uses two of them in concert:
+The Gemma 4 family ships four variants that span deployment scenarios from $200 phones to multi-GPU workstations. Gemma Disaster Grid uses two of them in concert:
 
 - **Gemma 4 E2B** (2.3B effective params, ~2.5GB in `.litertlm` format) — on-device, multimodal, runs offline via Google AI Edge LiteRT. This is the **field responder** tier.
 - **Gemma 4 31B** (dense, 4-bit quantized via Unsloth, runs on 2x T4 or any consumer GPU with 16GB+ VRAM) — high-context cross-report reasoning. This is the **command center** tier.

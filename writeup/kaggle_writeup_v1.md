@@ -1,4 +1,4 @@
-# NusaSiaga · Gemma Rescue Grid
+# NusaSiaga · Gemma Disaster Grid
 
 ### Offline-first disaster intelligence powered by Gemma 4 — from the responder's phone to the command center, even when the cell tower is gone
 
@@ -16,7 +16,7 @@ On 21 November 2024 a shallow magnitude 5.6 earthquake struck Cianjur, West Java
 
 The problem is not that AI cannot help. The problem is that disaster AI today either (a) needs steady cloud connectivity to function, or (b) is text-only and cannot read a photograph of a flooded street. In a disaster zone — anywhere — both assumptions fail at exactly the moment they matter most.
 
-Gemma 4 is the first open model family that spans this gap: frontier 31B reasoning in the cloud, plus a multimodal 2.3B-effective-parameter sibling that runs entirely on a 2020 mid-range phone via Google AI Edge LiteRT. We built **NusaSiaga · Gemma Rescue Grid** to put both ends of that family in the same response stack — and to keep working even when the radio is dead for days.
+Gemma 4 is the first open model family that spans this gap: frontier 31B reasoning in the cloud, plus a multimodal 2.3B-effective-parameter sibling that runs entirely on a 2020 mid-range phone via Google AI Edge LiteRT. We built **Gemma Disaster Grid** — a platform with the **Gemma Rescue Grid** Android app on the responder's phone and the **NusaSiaga · Gemma Disaster Grid** dashboard at the command center — to put both ends of that family in the same response stack, and to keep working even when the radio is dead for days.
 
 ## Solution at a glance
 

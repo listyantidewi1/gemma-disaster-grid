@@ -1,4 +1,4 @@
-# TESTING — Gemma Rescue Grid reproducible test scenarios
+# TESTING — Gemma Disaster Grid reproducible test scenarios
 
 This document is for hackathon judges and reviewers. Each scenario below is a self-contained, reproducible test of one claim made in the writeup. Each one lists **what you need**, **what to do**, **what success looks like**, and **where to look in the code** if you want to verify the implementation, not just the behaviour.
 
