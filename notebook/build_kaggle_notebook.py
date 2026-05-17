@@ -466,12 +466,35 @@ CELLS = [
                     if json_text is None:
                         obj, err = None, "no JSON object found in model output"
                     else:
-                        obj, err = parse_edge_report(json_text)
+                        # Inject envelope fields (report_id + timestamp + location).
+                        # On the Android app these are generated app-side (UUID +
+                        # ISO timestamp + GPS). The model itself never produces
+                        # them — it only fills in the disaster-classification fields.
+                        import uuid
+                        from datetime import datetime, timezone
+                        data = json.loads(json_text)
+                        data.setdefault("report_id", f"kaggle-edge-{uuid.uuid4()}")
+                        data.setdefault("timestamp_iso",
+                            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+                        data.setdefault("location", {
+                            "lat": None, "lon": None, "accuracy_m": None,
+                            "label": "Kaggle notebook edge-tier simulation",
+                        })
+                        obj, err = parse_edge_report(data)
                     if obj is None:
                         # Try the truncated-JSON repair pass before giving up.
                         repaired = attempt_truncated_json_repair(raw)
                         if repaired:
-                            obj, err = parse_edge_report(repaired)
+                            repaired_data = json.loads(repaired) if isinstance(repaired, str) else repaired
+                            if isinstance(repaired_data, dict):
+                                repaired_data.setdefault("report_id", f"kaggle-edge-{uuid.uuid4()}")
+                                repaired_data.setdefault("timestamp_iso",
+                                    datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+                                repaired_data.setdefault("location", {
+                                    "lat": None, "lon": None, "accuracy_m": None,
+                                    "label": "Kaggle notebook edge-tier simulation",
+                                })
+                            obj, err = parse_edge_report(repaired_data)
                     if obj is None:
                         print(f"  ⚠ parse failed: {err}")
                         edge_results[label] = {"raw": raw, "report": None, "wall_sec": elapsed}
