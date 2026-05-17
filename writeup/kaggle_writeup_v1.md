@@ -4,7 +4,7 @@
 
 **Tracks:** Impact / Global Resilience · Special Tech / Cactus (intelligent on-device routing)
 **Live demo:** <https://nusasiaga.vercel.app>
-**Code:** [github.com/listyantidewi1/gemma-disaster-grid](https://github.com/listyantidewi1/gemma-disaster-grid) · [github.com/listyantidewi1/nusasiaga](https://github.com/listyantidewi1/nusasiaga) · [github.com/listyantidewi1/gallery](https://github.com/listyantidewi1/gallery) (Android fork)
+**Code (monorepo, every tier):** [github.com/listyantidewi1/gemma-disaster-grid](https://github.com/listyantidewi1/gemma-disaster-grid) — `/android` (app), `/dashboard` (web), `/notebook` (Kaggle), `/grg` (shared schemas)
 **Video:** *(YouTube link added at submission)*
 **APK:** *(attached to this writeup)*
 
@@ -81,7 +81,7 @@ Every `EdgeTriageReport` carries the on-device model's own `routing_recommendati
 
 ## What we shipped vs. what is v1.1
 
-**Shipped:** full pipeline phone → dashboard, tri-modal triage (photo + voice + both), live sync with offline queue, WorkManager background drain, QR-mesh + share-intent peer handoff, reporter and crowd resolution paths, real-time AQI/wind, global FIRMS, three pre-curated scenarios, drop-in TypeScript modules for the Day-4 31B synthesis, bilingual team plan and documentation.
+**Shipped:** full pipeline phone → dashboard, tri-modal triage (photo + voice + both), live sync with offline queue, WorkManager background drain, QR-mesh + share-intent peer handoff, reporter and crowd resolution paths, real-time AQI/wind, global FIRMS, three pre-curated scenarios, drop-in TypeScript modules emitted by the 31B synthesis notebook, end-to-end Kaggle notebook that exercises every tier in one run.
 
 **v1.1 roadmap:** Bluetooth LE peer discovery so phones in proximity gossip without line-of-sight, dynamic clustering of incidents across reports, multi-organisation operator accounts, server-side incident closure workflow, mobile dashboard view for ops coordinators in the field.
 

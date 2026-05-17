@@ -118,7 +118,7 @@ CELLS = [
         | 3 | **Routing** (Cactus Prize) | `decide_routing()` across all 35 scenario reports | — |
         | 4 | **Sync** | Server-side `report_id` dedup + trust-gradient resolve simulation | — |
         | 5 | **Synthesis** | Three CommandCenterSynthesis runs across the curated scenarios | Gemma 4 **31B** |
-        | 6 | **Dashboard** | Drop-in TypeScript modules emitted for `nusasiaga/src/lib/` | — |
+        | 6 | **Dashboard** | Drop-in TypeScript modules emitted for `dashboard/src/lib/` | — |
 
         Each upstream tier is wrapped so its failure cannot block the 31B
         synthesis — the most expensive cell of the run. E2B is loaded, used,
@@ -227,8 +227,8 @@ CELLS = [
         ## 2. EDGE TIER — Gemma 4 E2B on the responder's phone (simulated)
 
         On the actual Android app (Gemma Rescue Grid, in
-        [`listyantidewi1/gallery`](https://github.com/listyantidewi1/gallery)),
-        Gemma 4 E2B runs **fully offline** via Google AI Edge LiteRT-LM,
+        [`/android`](https://github.com/listyantidewi1/gemma-disaster-grid/tree/main/android)
+        of this monorepo), Gemma 4 E2B runs **fully offline** via Google AI Edge LiteRT-LM,
         taking a photograph plus an optional 16 kHz voice note and emitting
         an `EdgeTriageReport` JSON object. End-to-end latency on a Samsung
         Galaxy A71 (2020 mid-range, Snapdragon 730, no NPU) is 30-60 seconds.
@@ -835,7 +835,7 @@ CELLS = [
         ## 6. DASHBOARD TIER — drop-in TypeScript modules
 
         Each synthesis becomes a TypeScript module exporting a typed constant.
-        Drop these into `nusasiaga/src/lib/` and `scenarios.ts` will pick them
+        Drop these into `dashboard/src/lib/` and `scenarios.ts` will pick them
         up — that's how Scenario A's synthesis got rendered on the dashboard
         from the Day-1 E4B run.
     """),
@@ -853,7 +853,7 @@ CELLS = [
  * Wall:     {wall_sec:.1f}s on Kaggle 2× T4
  * Run at:   {timestamp}
  *
- * Drop-in for nusasiaga/src/lib/. Imported by scenarios.ts and rendered
+ * Drop-in for dashboard/src/lib/. Imported by scenarios.ts and rendered
  * by FloodSynthesisPanel.
  */
 
@@ -978,7 +978,7 @@ export const {export_name}: CommandCenterSynthesis = '''
 
     code("""
         # ── Where to take the .ts files next ───────────────────────────────
-        print("Drop these into nusasiaga/src/lib/, then in scenarios.ts:")
+        print("Drop these into dashboard/src/lib/, then in scenarios.ts:")
         print()
         for sid, obj in validated.items():
             sc = results[sid]["scenario_meta"]
@@ -996,9 +996,9 @@ export const {export_name}: CommandCenterSynthesis = '''
 
         1. **Download** every `outputs/synthesis-scenario-*.ts` from the
            Kaggle sidebar.
-        2. **Drop** them into `nusasiaga/src/lib/` (overwriting the
+        2. **Drop** them into `dashboard/src/lib/` (overwriting the
            Day-1 E4B Scenario A module if it's still there).
-        3. **Update** `nusasiaga/src/lib/scenarios.ts`:
+        3. **Update** `dashboard/src/lib/scenarios.ts`:
             - Import the three new constants.
             - In each `SCENARIOS[id]` block, replace
               `synthesis: null` → the imported const, and

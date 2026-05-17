@@ -22,7 +22,7 @@ You do not need all three. Doing #1 alone shows the end-state output. Adding #2 
 
 - An Android phone running **Android 12 or newer**.
 - At least **3 GB free storage** (the Gemma 4 E2B model is ~2.5 GB on disk).
-- The APK file attached to the Kaggle writeup, **or** built from source via [`listyantidewi1/gallery`](https://github.com/listyantidewi1/gallery).
+- The APK file attached to the Kaggle writeup, **or** built from source via [`/android`](../android) in this repo.
 - USB cable + a computer with `adb`, **or** any way of moving an APK file onto the phone (cloud drive, email attachment, USB MTP, etc.).
 - Wifi or mobile data for the initial Gemma 4 E2B model download. After that, the phone can be fully offline.
 
@@ -130,7 +130,7 @@ The geolocation resolution is three-tier: browser geolocation → IP geolocation
 
 The notebook validates each JSON against `grg/schemas.py` (Pydantic). If any output fails validation, the cell raises — re-run that scenario's cell only.
 
-You can copy the `.ts` files into `nusasiaga/src/lib/` to flip the dashboard's pre-baked scenarios B and C from `pending` to `generated`. The Day-3 demo already ships scenario A's synthesis from the same pipeline.
+You can copy the `.ts` files into `dashboard/src/lib/` to flip the pre-baked scenarios B and C from `pending` to `generated`. Scenario A's synthesis already ships from the same pipeline.
 
 ---
 
@@ -169,8 +169,8 @@ The phone is trying to POST to `/api/reports` but failing. Causes:
 - If you're using a smaller-GPU notebook environment (e.g., free Colab), the notebook will not run. The 31B tier is for the cloud half of the architecture.
 
 ### "Build the Android app from source instead of using the APK"
-1. `git clone https://github.com/listyantidewi1/gallery.git`
-2. Open `gallery/Android` in Android Studio Iguana or newer.
+1. `git clone https://github.com/listyantidewi1/gemma-disaster-grid.git`
+2. Open `gemma-disaster-grid/android/Android` in Android Studio Iguana or newer.
 3. Sync Gradle. (~5 min first time.)
 4. Plug in the phone with USB debugging enabled.
 5. **Run → Run 'app'**.

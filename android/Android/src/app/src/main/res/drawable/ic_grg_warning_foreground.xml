@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon foreground for Gemma Rescue Grid. White warning triangle
+  with exclamation mark, sized to fit the 72dp safe area of the 108dp
+  viewport. Path is Material Symbols' "warning" glyph at 24x24, scaled 3x
+  and translated 18dp on each axis to centre it inside the safe zone.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportHeight="108"
+    android:viewportWidth="108">
+    <group
+        android:translateX="18"
+        android:translateY="18"
+        android:scaleX="3"
+        android:scaleY="3">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M12 5.99L19.53 19H4.47L12 5.99M2.74 18l8.59-14.89c.62-1.08 2.18-1.08 2.79 0L22.71 18c.61 1.05-.15 2.4-1.39 2.4H4.13c-1.24 0-2-1.35-1.39-2.4zM12 16h2v2h-2zm0-6h2v4h-2z" />
+    </group>
+</vector>

@@ -1,0 +1,234 @@
+/**
+ * Scenario A — Rapid-onset urban flooding, central Jakarta, 90-minute window.
+ *
+ * 12 EdgeTriageReport objects as they would be emitted by Gemma 4 E2B on the
+ * responder's phone. Used by the Flood Response tab in the dashboard.
+ *
+ * Renamed export to `floodReports` so this file coexists with `./reports.ts`
+ * (which holds the wildfire mock data used by the Wildfire Monitoring tab).
+ */
+
+import type { EdgeTriageReport } from "./types";
+
+export const floodReports: EdgeTriageReport[] = [
+  {
+    report_id: "a1f6c2d4-0001-4b8e-9c12-tegal3-1402",
+    timestamp_iso: "2026-04-18T14:02:00Z",
+    location: { lat: -6.2401, lon: 106.8519, accuracy_m: 12, label: "Tegal Sari Block 3, RT 04" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.94,
+    severity: 2,
+    severity_rationale:
+      "Mid-shin floodwater on residential alley, no structural damage visible, residents moving items but not in distress.",
+    hazards_visible: ["floodwater above ankle", "unknown water contamination"],
+    people_visible: { adults: 3, children: 0, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Monitor water levels; advise residents to move valuables to second floor; prepare evacuation gear.",
+    evacuation_priority: "standby",
+    routing_recommendation: "fast_lane",
+    routing_rationale: "Low severity, no compound hazards, high confidence.",
+  },
+  {
+    report_id: "a1f6c2d4-0002-4b8e-9c12-tegal3-1408",
+    timestamp_iso: "2026-04-18T14:08:00Z",
+    location: { lat: -6.2402, lon: 106.852, accuracy_m: 15, label: "Tegal Sari Block 3, RT 04" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.91,
+    severity: 3,
+    severity_rationale:
+      "Water rising past shin to knee; sagging low-voltage line visible above pedestrians; one child in group.",
+    hazards_visible: ["sagging electrical wire", "floodwater knee-high", "rising water trend"],
+    people_visible: { adults: 2, children: 1, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Move pedestrians away from sagging wire; do not wade beneath it; cut local power if safely accessible.",
+    evacuation_priority: "urgent",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Compound hazard: rising water plus electrical.",
+  },
+  {
+    report_id: "a1f6c2d4-0003-4b8e-9c12-tegal5-1415",
+    timestamp_iso: "2026-04-18T14:15:00Z",
+    location: { lat: -6.2412, lon: 106.8531, accuracy_m: 10, label: "Tegal Sari Block 5, Jl. Tegal Sari V" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.89,
+    severity: 2,
+    severity_rationale:
+      "Knee-high water on side street, one abandoned motorcycle partially submerged, no people visible.",
+    hazards_visible: ["floodwater knee-high", "submerged vehicle"],
+    people_visible: { adults: 0, children: 0, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Mark abandoned vehicle location for later recovery; survey adjacent buildings for trapped residents.",
+    evacuation_priority: "standby",
+    routing_recommendation: "fast_lane",
+    routing_rationale: "No people in danger; routine flood damage.",
+  },
+  {
+    report_id: "a1f6c2d4-0004-4b8e-9c12-tegal5-1422",
+    timestamp_iso: "2026-04-18T14:22:00Z",
+    location: { lat: -6.2413, lon: 106.8532, accuracy_m: 8, label: "Tegal Sari Block 5, Jl. Tegal Sari V" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.93,
+    severity: 4,
+    severity_rationale:
+      "Water now at waist level; downed power line touching water surface; elderly woman visible on rooftop signaling for help.",
+    hazards_visible: [
+      "downed live power line in water",
+      "floodwater waist-high",
+      "elderly stranded on roof",
+    ],
+    people_visible: { adults: 0, children: 0, elderly_apparent: 1, injured_apparent: 0, trapped_apparent: 1 },
+    immediate_action:
+      "DO NOT enter water; request power utility immediate disconnect; deploy boat or ladder rescue from upwind side.",
+    evacuation_priority: "immediate",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Severity 4, trapped elderly, active electrical hazard.",
+  },
+  {
+    report_id: "a1f6c2d4-0005-4b8e-9c12-mangg-1430",
+    timestamp_iso: "2026-04-18T14:30:00Z",
+    location: { lat: -6.2461, lon: 106.8485, accuracy_m: 18, label: "Manggarai Underpass, Jl. Sultan Agung" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.96,
+    severity: 4,
+    severity_rationale:
+      "Underpass fully flooded; motorcycle submerged with rider visible on adjacent raised platform; two adults stranded.",
+    hazards_visible: [
+      "fully flooded underpass",
+      "submerged vehicle with possible occupant",
+      "strong current",
+    ],
+    people_visible: { adults: 2, children: 0, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 2 },
+    immediate_action:
+      "Block both entrances to underpass; deploy rescue boat for stranded persons; check submerged motorcycle for trapped rider.",
+    evacuation_priority: "immediate",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Possible trapped rider in submerged vehicle, severity 4.",
+  },
+  {
+    report_id: "a1f6c2d4-0006-4b8e-9c12-tegal3-1435",
+    timestamp_iso: "2026-04-18T14:35:00Z",
+    location: { lat: -6.24, lon: 106.8518, accuracy_m: 14, label: "Tegal Sari Block 3, RT 05" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.88,
+    severity: 3,
+    severity_rationale:
+      "Water now knee-to-thigh height in Block 3, confirming earlier rising trend; four residents wading toward higher ground.",
+    hazards_visible: ["floodwater thigh-high", "rising water trend confirmed", "debris in water"],
+    people_visible: { adults: 4, children: 0, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Direct residents to assembly point at Tegal Sari Masjid; survey for remaining residents in upstream alleys.",
+    evacuation_priority: "urgent",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Third report this area in 35 minutes; situation evolving.",
+  },
+  {
+    report_id: "a1f6c2d4-0007-4b8e-9c12-tebet-1440",
+    timestamp_iso: "2026-04-18T14:40:00Z",
+    location: { lat: -6.2348, lon: 106.8602, accuracy_m: 9, label: "Jl. Tebet Barat IV" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.85,
+    severity: 2,
+    severity_rationale:
+      "Ankle-deep water on commercial street; shop owner moving inventory; conditions stable.",
+    hazards_visible: ["floodwater ankle-deep"],
+    people_visible: { adults: 1, children: 0, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Monitor; no immediate action needed; assist business with sandbag placement if available.",
+    evacuation_priority: "none",
+    routing_recommendation: "fast_lane",
+    routing_rationale: "Routine localized flooding.",
+  },
+  {
+    report_id: "a1f6c2d4-0008-4b8e-9c12-mangg-1450",
+    timestamp_iso: "2026-04-18T14:50:00Z",
+    location: { lat: -6.2459, lon: 106.8489, accuracy_m: 11, label: "Manggarai Station Plaza" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.92,
+    severity: 3,
+    severity_rationale:
+      "Station plaza covered in knee-deep water; commuters stranded; children present in waiting group.",
+    hazards_visible: ["floodwater knee-deep", "crowded area", "rail service suspended"],
+    people_visible: { adults: 6, children: 2, elderly_apparent: 1, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Coordinate with KAI station staff to direct commuters to elevated waiting area; deploy bus shuttle from nearest dry station.",
+    evacuation_priority: "urgent",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Vulnerable groups (children + elderly) in flooded transit hub.",
+  },
+  {
+    report_id: "a1f6c2d4-0009-4b8e-9c12-tegal7-1501",
+    timestamp_iso: "2026-04-18T15:01:00Z",
+    location: { lat: -6.2419, lon: 106.8545, accuracy_m: 22, label: "Tegal Sari Block 7, Jl. Tegal Sari VII" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.78,
+    severity: 3,
+    severity_rationale:
+      "Partial collapse of perimeter wall into floodwater; strong current visible; image quality fair due to rain.",
+    hazards_visible: ["partial wall collapse", "strong current", "debris in fast water"],
+    people_visible: { adults: 0, children: 0, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Cordon off collapsed wall area; warn upstream households of debris flow risk; survey for displaced residents.",
+    evacuation_priority: "urgent",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Lower confidence on image; structural damage warrants cross-check.",
+  },
+  {
+    report_id: "a1f6c2d4-0010-4b8e-9c12-tegal5-1510",
+    timestamp_iso: "2026-04-18T15:10:00Z",
+    location: { lat: -6.2413, lon: 106.8533, accuracy_m: 10, label: "Tegal Sari Block 5, Jl. Tegal Sari V" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.95,
+    severity: 4,
+    severity_rationale:
+      "Follow-up at Block 5: rescue team on site, elderly woman safely extracted from rooftop; downed line confirmed live.",
+    hazards_visible: [
+      "downed live power line confirmed",
+      "floodwater waist-high",
+      "ongoing rescue operation",
+    ],
+    people_visible: { adults: 3, children: 0, elderly_apparent: 1, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Maintain electrical hazard cordon until utility disconnect confirmed; transport extracted resident to medical for check.",
+    evacuation_priority: "immediate",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Follow-up to high-severity case; situation still active.",
+  },
+  {
+    report_id: "a1f6c2d4-0011-4b8e-9c12-cawang-1515",
+    timestamp_iso: "2026-04-18T15:15:00Z",
+    location: { lat: -6.2497, lon: 106.8694, accuracy_m: 16, label: "Cawang Junction" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.86,
+    severity: 2,
+    severity_rationale:
+      "Traffic stopped on multi-lane junction; light flooding across lanes; no people in distress; vehicles relocating.",
+    hazards_visible: ["floodwater shin-deep on roadway", "traffic jam"],
+    people_visible: { adults: 0, children: 0, elderly_apparent: 0, injured_apparent: 0, trapped_apparent: 0 },
+    immediate_action:
+      "Coordinate with traffic police for alternate routing; monitor for trapped vehicles in lower-lying lanes.",
+    evacuation_priority: "standby",
+    routing_recommendation: "fast_lane",
+    routing_rationale: "Traffic disruption only; no life-safety concern.",
+  },
+  {
+    report_id: "a1f6c2d4-0012-4b8e-9c12-tegal3-1520",
+    timestamp_iso: "2026-04-18T15:20:00Z",
+    location: { lat: -6.2402, lon: 106.8521, accuracy_m: 13, label: "Tegal Sari Block 3, RT 05" },
+    disaster_type: "flood",
+    disaster_type_confidence: 0.9,
+    severity: 3,
+    severity_rationale:
+      "Water levels in Block 3 stabilizing; one adult with bandaged forearm sitting on raised step; minor slip injury reported.",
+    hazards_visible: [
+      "floodwater thigh-high but stable",
+      "debris in water",
+      "one minor injury",
+    ],
+    people_visible: { adults: 3, children: 0, elderly_apparent: 0, injured_apparent: 1, trapped_apparent: 0 },
+    immediate_action:
+      "Triage minor injury; continue monitoring water level for renewed rise; coordinate evacuation logistics for vulnerable residents.",
+    evacuation_priority: "urgent",
+    routing_recommendation: "deep_lane",
+    routing_rationale: "Fourth report this zone; pattern of stabilization warrants synthesis.",
+  },
+];

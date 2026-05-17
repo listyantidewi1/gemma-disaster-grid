@@ -41,7 +41,7 @@ Total spoken: ~390 words. Comfortable at 150 wpm with breathing room. Padding sc
 - [ ] Cell tower silhouette dusk (stock OK)
 - [ ] Phone in a hand, screen-capture quality (record at 1080p portrait, then crop)
 - [ ] Airplane mode toggle close-up (loop-recordable in pre-production)
-- [ ] Camera capture of a staged "flooded street" scene + voice note in Bahasa Indonesia (newbie's responsibility to source/stage)
+- [ ] Camera capture of a staged "flooded street" scene + voice note in Bahasa Indonesia
 - [ ] The actual app demo screen recording (built Day 3–4)
 - [ ] Kaggle notebook screen recording (built Day 2–4)
 - [ ] Field worker in yellow vest with phone (any willing volunteer; can be staged)

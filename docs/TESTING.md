@@ -4,9 +4,9 @@ This document is for hackathon judges and reviewers. Each scenario below is a se
 
 The complete system has three deployables:
 
-- **Dashboard** — Next.js 16 app on Vercel. Public demo: <https://nusasiaga.vercel.app>. Source: [`listyantidewi1/nusasiaga`](https://github.com/listyantidewi1/nusasiaga).
-- **Android app** — Kotlin app forked from `google-ai-edge/gallery`. Source: [`listyantidewi1/gallery`](https://github.com/listyantidewi1/gallery). APK attached to the writeup.
-- **Kaggle notebook** — Gemma 4 31B synthesis on 2× T4. Source: [`gemma-disaster-grid/notebook/gemma_rescue_grid_kaggle.ipynb`](https://github.com/listyantidewi1/gemma-disaster-grid/tree/main/notebook).
+- **Dashboard** — Next.js 16 app on Vercel. Public demo: <https://nusasiaga.vercel.app>. Source: [`/dashboard`](../dashboard) in this repo.
+- **Android app** — Kotlin app, fork of `google-ai-edge/gallery`. Source: [`/android`](../android) in this repo. APK attached to the writeup.
+- **Kaggle notebook** — Gemma 4 31B synthesis on 2× T4. Source: [`/notebook/gemma_rescue_grid_kaggle.ipynb`](../notebook/gemma_rescue_grid_kaggle.ipynb).
 
 You can verify the writeup's claims at three levels of effort:
 
@@ -35,7 +35,7 @@ These work from any browser. No installation required.
 
 **Success criteria:** map renders, filters mutually exclude, fit-to-all reframes the bounds.
 
-**Code**: `nusasiaga/src/features/flood/components/FloodMapClient.tsx`, `nusasiaga/src/features/triage/components/DisasterTypeFilter.tsx`.
+**Code**: `dashboard/src/features/flood/components/FloodMapClient.tsx`, `dashboard/src/features/triage/components/DisasterTypeFilter.tsx`.
 
 ---
 
@@ -51,7 +51,7 @@ These work from any browser. No installation required.
 
 **Success criteria:** values vary by location; network tab shows the `/api/environment` proxy call with your lat/lon.
 
-**Code**: `nusasiaga/src/app/api/environment/route.ts`, `nusasiaga/src/features/environment/components/EnvironmentStats.tsx`, `nusasiaga/src/lib/use-user-location.ts`.
+**Code**: `dashboard/src/app/api/environment/route.ts`, `dashboard/src/features/environment/components/EnvironmentStats.tsx`, `dashboard/src/lib/use-user-location.ts`.
 
 ---
 
@@ -67,7 +67,7 @@ These work from any browser. No installation required.
 
 **Success criteria:** worldwide hotspot coverage (not Indonesia-only), feed is sorted by relevance, no hardcoded demo strings.
 
-**Code**: `nusasiaga/src/app/api/firms/route.ts`, `nusasiaga/src/features/incidents/components/IncidentFeed.tsx`.
+**Code**: `dashboard/src/app/api/firms/route.ts`, `dashboard/src/features/incidents/components/IncidentFeed.tsx`.
 
 ---
 
@@ -86,7 +86,7 @@ These work from any browser. No installation required.
 
 **Success criteria:** 5 distinct voters required; same voter can't double-vote; resolved card visibly fades.
 
-**Code**: `nusasiaga/src/app/api/reports/[id]/vote/route.ts`, `nusasiaga/src/lib/use-live-reports.ts` (`voteToResolve`, `getOrCreateVoterId`), `nusasiaga/src/features/live-reports/components/IncomingReportsPanel.tsx`.
+**Code**: `dashboard/src/app/api/reports/[id]/vote/route.ts`, `dashboard/src/lib/use-live-reports.ts` (`voteToResolve`, `getOrCreateVoterId`), `dashboard/src/features/live-reports/components/IncomingReportsPanel.tsx`.
 
 ---
 
@@ -101,7 +101,7 @@ These work from any browser. No installation required.
 
 **Success criteria:** `COLLAPSED_PAGE_SIZE = 5` is honoured; expand/collapse round-trips.
 
-**Code**: `nusasiaga/src/features/live-reports/components/IncomingReportsPanel.tsx` (constant `COLLAPSED_PAGE_SIZE`).
+**Code**: `dashboard/src/features/live-reports/components/IncomingReportsPanel.tsx` (constant `COLLAPSED_PAGE_SIZE`).
 
 ---
 
@@ -133,7 +133,7 @@ You need the APK (attached to the writeup) and any Android 12+ phone with ~3 GB 
 
 **Success criteria:** result card shows in 30–60 s; sync chip turns green; dashboard reflects the new report in under 10 s; reverse-geocoded place label populated.
 
-**Code**: edge inference — `gallery/Android/src/app/src/main/java/com/google/ai/edge/gallery/customtasks/disastertriage/DisasterTriageScreen.kt`. Upload — `ai/grg/TriageUploader.kt`. Server — `nusasiaga/src/app/api/reports/route.ts`.
+**Code**: edge inference — `gallery/Android/src/app/src/main/java/com/google/ai/edge/gallery/customtasks/disastertriage/DisasterTriageScreen.kt`. Upload — `ai/grg/TriageUploader.kt`. Server — `dashboard/src/app/api/reports/route.ts`.
 
 ---
 
@@ -203,7 +203,7 @@ You need the APK (attached to the writeup) and any Android 12+ phone with ~3 GB 
 
 **Success criteria:** exactly **one** row for that report on the dashboard. Server dedup wins.
 
-**Code**: `nusasiaga/src/app/api/reports/route.ts` (`SADD` semantics keyed on `report_id`).
+**Code**: `dashboard/src/app/api/reports/route.ts` (`SADD` semantics keyed on `report_id`).
 
 ---
 
@@ -237,7 +237,7 @@ You need the APK (attached to the writeup) and any Android 12+ phone with ~3 GB 
 
 **Success criteria:** single tap on the responder's phone is enough to resolve. No 5-vote consensus needed (compare with L1.4). The two trust paths produce different `_resolved_by` markers.
 
-**Code**: `ai/grg/TriageUploader.kt` (`patchResolve`), `nusasiaga/src/app/api/reports/[id]/route.ts` (PATCH handler).
+**Code**: `ai/grg/TriageUploader.kt` (`patchResolve`), `dashboard/src/app/api/reports/[id]/route.ts` (PATCH handler).
 
 ---
 
@@ -260,7 +260,7 @@ You need the APK (attached to the writeup) and any Android 12+ phone with ~3 GB 
    - write `outputs/synthesis_scenario_{a,b,c}.json` and matching `synthesis-scenario-{a,b,c}.ts`.
 4. Inspect the final summary cell. It prints a pandas table: scenario → report count, severity distribution, hot zones, output token count, wall-clock seconds.
 
-**Success criteria:** all three scenarios complete; each produces JSON conforming to the `CommandCenterSynthesis` schema (validated by `grg/schemas.py`); each `.ts` module is a drop-in for `nusasiaga/src/lib/`.
+**Success criteria:** all three scenarios complete; each produces JSON conforming to the `CommandCenterSynthesis` schema (validated by `grg/schemas.py`); each `.ts` module is a drop-in for `dashboard/src/lib/`.
 
 **Code**: `notebook/build_kaggle_notebook.py` (script that builds the .ipynb), `notebook/gemma_rescue_grid_kaggle.ipynb` (the built artifact), `grg/schemas.py` (Pydantic validation).
 
