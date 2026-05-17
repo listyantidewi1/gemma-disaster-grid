@@ -392,7 +392,8 @@ CELLS = [
                 max_seq_length=4096,       # edge prompts are short
                 load_in_4bit=False,        # E2B is small; fp16 is fine
                 full_finetuning=False,
-            )
+                device_map={"": "cuda:0"}, # force single GPU — E2B fits on one T4
+            )                              # and the inputs go to cuda:0
             E2B_LOADED = True
             print(f"  ✓ E2B loaded")
             print(f"  GPU memory in use: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
