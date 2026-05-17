@@ -1034,7 +1034,7 @@ CELLS = [
 
             json_path = Path(f"outputs/synthesis_scenario_{sid}.json")
             json_path.write_text(
-                json.dumps(obj.model_dump(mode="json"), indent=2, ensure_ascii=False),
+                json.dumps(obj.model_dump(mode="json", by_alias=True), indent=2, ensure_ascii=False),
                 encoding="utf-8",
             )
             print(f"  ✓ {sid.upper()}: validated, wrote {json_path}")
@@ -1080,7 +1080,7 @@ export const {export_name}: CommandCenterSynthesis = '''
         for sid, obj in validated.items():
             sc = results[sid]["scenario_meta"]
             ts_path = Path(f"outputs/{sc['ts_module_name']}.ts")
-            payload = json.dumps(obj.model_dump(mode="json"), indent=2, ensure_ascii=False)
+            payload = json.dumps(obj.model_dump(mode="json", by_alias=True), indent=2, ensure_ascii=False)
             header = TS_HEADER_TEMPLATE.format(
                 label=sc["label"],
                 n_reports=sc["n_reports"],
@@ -1114,7 +1114,7 @@ export const {export_name}: CommandCenterSynthesis = '''
             rows = []
             for sid, obj in validated.items():
                 sc = results[sid]["scenario_meta"]
-                ds = obj.model_dump(mode="json")
+                ds = obj.model_dump(mode="json", by_alias=True)
                 rows.append({
                     "id":          sid.upper(),
                     "label":       sc["label"][:30],
@@ -1130,7 +1130,7 @@ export const {export_name}: CommandCenterSynthesis = '''
             display(pd.DataFrame(rows))
         except ImportError:
             for sid, obj in validated.items():
-                ds = obj.model_dump(mode="json")
+                ds = obj.model_dump(mode="json", by_alias=True)
                 print(f"{sid.upper()}: {len(ds['priority_zones'])} zones, "
                       f"{len(ds['recommended_actions'])} actions, "
                       f"{len(ds['consolidated_hazards'])} hazards")
