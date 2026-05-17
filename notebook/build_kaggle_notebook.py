@@ -234,31 +234,65 @@ CELLS = [
         Galaxy A71 (2020 mid-range, Snapdragon 730, no NPU) is 30-60 seconds.
 
         This notebook **simulates that edge tier** by loading the same model
-        (`unsloth/gemma-4-E2B-it`) on the Kaggle T4 and feeding it a small
-        set of disaster images extracted from the bundled
-        `data/disaster_images_dataset.zip` (Comprehensive Disaster Dataset,
-        Mendeley Data, CC-BY 4.0). The same locked system prompt is used —
-        every output is schema-validated against `EdgeTriageReport`, proving
-        the JSON contract holds at the edge.
+        (Gemma 4 E2B) on the Kaggle T4 and feeding it **a handful** of
+        disaster images (one per type — flood, earthquake, urban fire,
+        landslide). The Comprehensive Disaster Dataset has 13.5k images;
+        we deliberately pick only 4 because the point is to prove the JSON
+        contract holds at the edge, not to benchmark.
+
+        Two ways the images can be sourced (the next cell auto-detects):
+
+        1. **Recommended**: attach the Kaggle Dataset directly via *Add Data
+           → Datasets → search "Comprehensive Disaster Dataset"*. Loose PNGs
+           appear under `/kaggle/input/<slug>/Comprehensive Disaster Dataset(CDD)/`.
+        2. **Fallback**: the same dataset is bundled in this repo as
+           `data/disaster_images_dataset.zip` and the notebook will unzip
+           the four picks if no Kaggle Dataset is attached.
+
+        Same trick for the **models** themselves — *Add Models → Gemma →
+        Transformers* lets you attach `gemma-4-e2b-it` and `gemma-4-31b-it`
+        as Kaggle Models so they load from local disk in seconds instead of
+        downloading ~22 GB from HuggingFace at runtime. If you skip that,
+        the notebook falls back to `unsloth/gemma-4-E2B-it` and
+        `unsloth/gemma-4-31B-it` via HuggingFace — works fine, just slower
+        the first time.
 
         We free E2B from GPU memory before loading 31B so both fit comfortably.
     """),
 
     code("""
-        # ── 2.1 Extract a handful of demo images from the bundled dataset ─
-        # The Comprehensive Disaster Dataset (CDD) ships 13.5k images
-        # categorised by disaster type. We pick the first image alphabetically
-        # per category for reproducibility — anyone re-running this notebook
-        # gets the same demo set without us hardcoding 13.5k filenames.
-        import zipfile
+        # ── 2.1 Find 4 demo images (one per disaster type) ────────────────
+        # Looks for a Kaggle Dataset attachment first, falls back to the
+        # bundled zip if not on Kaggle / not attached. Either way we copy
+        # exactly four PNGs into demo_images/ — one flood, one earthquake,
+        # one urban fire, one landslide. We never iterate over the 13.5k
+        # images in the dataset.
+        import glob, zipfile
         from pathlib import Path
+
+        def find_cdd_root():
+            \"\"\"Return (source, kind). kind is 'kaggle_dataset' if a Kaggle
+            Dataset is attached (loose dir), 'bundled_zip' if the repo zip
+            is present, or 'none'.\"\"\"
+            if Path("/kaggle/input").is_dir():
+                hits = glob.glob(
+                    "/kaggle/input/**/Comprehensive Disaster Dataset(CDD)",
+                    recursive=True,
+                )
+                if hits:
+                    return Path(hits[0]), "kaggle_dataset"
+            if Path("data/disaster_images_dataset.zip").exists():
+                return Path("data/disaster_images_dataset.zip"), "bundled_zip"
+            return None, "none"
+
+        CDD_ROOT, CDD_KIND = find_cdd_root()
+        print(f"Disaster image source: {CDD_KIND}")
+        print(f"  path: {CDD_ROOT}")
 
         DEMO_DIR = Path("/kaggle/working/demo_images") if Path("/kaggle/working").is_dir() else Path("demo_images")
         DEMO_DIR.mkdir(parents=True, exist_ok=True)
-        DATASET_ZIP = Path("data/disaster_images_dataset.zip")
 
-        # We want one image per disaster type the edge tier should classify.
-        # Mapping is "our disaster_type label" → "CDD folder substring".
+        # Folder substring per type — matches the CDD layout.
         EDGE_DEMO_TYPES = {
             "flood":         "Water_Disaster",
             "earthquake":    "Damaged_Infrastructure/Earthquake",
@@ -267,18 +301,39 @@ CELLS = [
         }
 
         edge_demo_inputs = {}
-        if not DATASET_ZIP.exists():
-            print(f"  ⚠ {DATASET_ZIP} missing — edge demo will fall back to text-only")
+        if CDD_ROOT is None:
+            print("  ⚠ no disaster image source found — edge demo will fall back to text-only")
+        elif CDD_KIND == "kaggle_dataset":
+            # Loose files under a directory. Walk it once.
+            all_pngs = sorted(
+                str(p.relative_to(CDD_ROOT))
+                for p in CDD_ROOT.rglob("*")
+                if p.is_file() and p.suffix.lower() in {".png", ".jpg", ".jpeg"}
+            )
+            print(f"  ({len(all_pngs):,} total images in attached dataset; using 4)")
+            for label, folder_substr in EDGE_DEMO_TYPES.items():
+                matches = [n for n in all_pngs if folder_substr in n]
+                if not matches:
+                    print(f"  ⚠ no images for {label} ({folder_substr})")
+                    continue
+                pick = matches[len(matches) // 2]
+                src_path = CDD_ROOT / pick
+                out_path = DEMO_DIR / f"{label}.png"
+                out_path.write_bytes(src_path.read_bytes())
+                edge_demo_inputs[label] = out_path
+                print(f"  ✓ {label:14s} → {out_path.name}  (from {pick})")
         else:
-            with zipfile.ZipFile(DATASET_ZIP) as zf:
+            # bundled_zip
+            with zipfile.ZipFile(CDD_ROOT) as zf:
                 all_names = sorted(n for n in zf.namelist()
                                    if n.lower().endswith((".png", ".jpg", ".jpeg")))
+                print(f"  ({len(all_names):,} total images in bundled zip; using 4)")
                 for label, folder_substr in EDGE_DEMO_TYPES.items():
                     matches = [n for n in all_names if folder_substr in n]
                     if not matches:
                         print(f"  ⚠ no images for {label} ({folder_substr})")
                         continue
-                    pick = matches[len(matches) // 2]  # middle file for variety
+                    pick = matches[len(matches) // 2]
                     out_path = DEMO_DIR / f"{label}.png"
                     with zf.open(pick) as src, open(out_path, "wb") as dst:
                         dst.write(src.read())
@@ -290,13 +345,47 @@ CELLS = [
 
     code("""
         # ── 2.2 Load Gemma 4 E2B (multimodal, small, ~5 GB at fp16) ───────
-        # We load this BEFORE the 31B synthesis model and free it after the
-        # edge demos run — so both can fit on the 2× T4 setup sequentially.
-        import torch
+        # Loaded BEFORE 31B and explicitly freed afterwards (cell 2.4) so
+        # both can fit on the 2× T4 setup sequentially.
+        #
+        # Source resolution:
+        #   - If you attached the model via *Add Models → Gemma →
+        #     Transformers → e2b-it*, we'll load from /kaggle/input/...
+        #     instantly.
+        #   - Otherwise we pip-download unsloth/gemma-4-E2B-it from HF
+        #     (~5 GB, ~2-3 min on Kaggle's network).
+        import glob, torch
+        from pathlib import Path
+
+        def find_attached_model(hints):
+            \"\"\"Search /kaggle/input/ for a model dir whose name matches any
+            of the hints AND contains config.json + weights.\"\"\"
+            if not Path("/kaggle/input").is_dir():
+                return None
+            for hint in hints:
+                for d in glob.glob(f"/kaggle/input/**/{hint}*", recursive=True):
+                    p = Path(d)
+                    if not p.is_dir():
+                        continue
+                    for cfg in p.rglob("config.json"):
+                        siblings = list(cfg.parent.iterdir())
+                        if any(s.suffix in {".safetensors", ".bin"} for s in siblings):
+                            return cfg.parent
+            return None
+
+        E2B_LOCAL = find_attached_model([
+            "gemma-4-e2b-it", "gemma-4-E2B-it",
+            "e2b-it", "E2B-it",
+        ])
+
         try:
             from unsloth import FastModel
-            E2B_MODEL = "unsloth/gemma-4-E2B-it"
-            print(f"Loading {E2B_MODEL} (this is ~5 GB; first-time download is slower)...")
+            if E2B_LOCAL:
+                E2B_MODEL = str(E2B_LOCAL)
+                print(f"Loading attached Kaggle Model from {E2B_MODEL}")
+            else:
+                E2B_MODEL = "unsloth/gemma-4-E2B-it"
+                print(f"Downloading {E2B_MODEL} from HuggingFace (~5 GB)...")
             e2b_model, e2b_processor = FastModel.from_pretrained(
                 model_name=E2B_MODEL,
                 dtype=None,                # auto bfloat16/float16
@@ -305,7 +394,7 @@ CELLS = [
                 full_finetuning=False,
             )
             E2B_LOADED = True
-            print(f"  ✓ {E2B_MODEL} loaded")
+            print(f"  ✓ E2B loaded")
             print(f"  GPU memory in use: {torch.cuda.memory_reserved() / 1024**3:.2f} GB")
         except Exception as e:
             E2B_LOADED = False
@@ -646,11 +735,24 @@ CELLS = [
 
     code("""
         # ── 5.1 Model configuration ──────────────────────────────────────
-        MODEL_NAME    = "unsloth/gemma-4-31B-it"
+        # Same source-resolution logic as E2B: prefer a Kaggle-attached
+        # Transformers Gemma 4 model if available, fall back to Unsloth's
+        # pre-quantized HF mirror otherwise. The HF version is ~17 GB on
+        # the wire but ships already in 4-bit, so no re-quantization.
+        # An attached Google bf16 build will get on-the-fly 4-bit quantized
+        # by Unsloth, which adds 1-2 minutes to the load.
+        N31B_LOCAL = find_attached_model([
+            "gemma-4-31b-it", "gemma-4-31B-it",
+            "31b-it", "31B-it",
+        ])
+        MODEL_NAME    = str(N31B_LOCAL) if N31B_LOCAL else "unsloth/gemma-4-31B-it"
         DEVICE_MAP    = "balanced"
         MAX_SEQ_LENGTH = 16384
 
-        print(f"Model:    {MODEL_NAME}")
+        if N31B_LOCAL:
+            print(f"Source:   attached Kaggle Model ({MODEL_NAME})")
+        else:
+            print(f"Source:   HuggingFace download ({MODEL_NAME})")
         print(f"Device:   {DEVICE_MAP}")
         print(f"Seq len:  {MAX_SEQ_LENGTH}")
     """),
