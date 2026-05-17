@@ -458,7 +458,16 @@ CELLS = [
                     t0 = time.time()
                     raw = edge_triage(img_path, voice_text=VOICE_NOTE_TEXT.get(label, ""))
                     elapsed = time.time() - t0
-                    obj, err = extract_json_from_model_output(raw, parse_edge_report)
+                    json_text = extract_json_from_model_output(raw)
+                    if json_text is None:
+                        obj, err = None, "no JSON object found in model output"
+                    else:
+                        obj, err = parse_edge_report(json_text)
+                    if obj is None:
+                        # Try the truncated-JSON repair pass before giving up.
+                        repaired = attempt_truncated_json_repair(raw)
+                        if repaired:
+                            obj, err = parse_edge_report(repaired)
                     if obj is None:
                         print(f"  ⚠ parse failed: {err}")
                         edge_results[label] = {"raw": raw, "report": None, "wall_sec": elapsed}
@@ -910,7 +919,11 @@ CELLS = [
 
         for sid, res in results.items():
             raw = res["raw_output"]
-            obj, err = extract_json_from_model_output(raw, parse_synthesis)
+            json_text = extract_json_from_model_output(raw)
+            if json_text is None:
+                obj, err = None, "no JSON object found in model output"
+            else:
+                obj, err = parse_synthesis(json_text)
             if obj is None:
                 print(f"  ⚠ {sid.upper()}: extract failed — trying repair pass")
                 repaired = attempt_truncated_json_repair(raw)
