@@ -515,6 +515,77 @@ CELLS = [
     """),
 
     code("""
+        # ── 2.3b Render each demo image alongside its EdgeTriageReport ────
+        # A judges-friendly visual: the actual photograph Gemma 4 E2B saw,
+        # next to the structured triage it produced. Severity + routing
+        # are colour-coded; the immediate action is highlighted because
+        # that is the field a responder acts on in the first 10 minutes.
+        from IPython.display import display, HTML
+        import base64, io
+        from PIL import Image
+
+        _valid = [(label, res) for label, res in edge_results.items()
+                  if res.get("report") is not None]
+
+        if not _valid:
+            print("No valid edge-tier outputs to display.")
+        else:
+            SEV_COLOR = {1: "#16a34a", 2: "#84cc16", 3: "#f59e0b",
+                         4: "#ea580c", 5: "#dc2626"}
+            cards = ['<div style="display:flex;flex-direction:column;gap:18px;font-family:system-ui,-apple-system,sans-serif;">']
+            for label, res in _valid:
+                r = res["report"]
+                img = Image.open(edge_demo_inputs[label])
+                img.thumbnail((360, 360))
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+                b64 = base64.b64encode(buf.getvalue()).decode()
+
+                hazards = ", ".join(r.hazards_visible) if r.hazards_visible else "—"
+                p = r.people_visible
+                ppl_parts = []
+                if p.adults > 0: ppl_parts.append(f"{p.adults} adult{'s' if p.adults != 1 else ''}")
+                if p.children > 0: ppl_parts.append(f"{p.children} child{'ren' if p.children != 1 else ''}")
+                if p.elderly_apparent > 0: ppl_parts.append(f"{p.elderly_apparent} elderly")
+                if p.injured_apparent > 0: ppl_parts.append(f"{p.injured_apparent} injured")
+                if p.trapped_apparent > 0: ppl_parts.append(f"{p.trapped_apparent} trapped")
+                ppl_str = " · ".join(ppl_parts) if ppl_parts else "no people visible"
+
+                sev_color = SEV_COLOR.get(r.severity, "#6b7280")
+                is_deep = r.routing_recommendation == "deep_lane"
+                routing_color = "#ea580c" if is_deep else "#16a34a"
+                routing_label = "DEEP LANE → 31B" if is_deep else "FAST LANE | local"
+
+                cards.append(f'''
+                <div style="display:flex;gap:20px;align-items:flex-start;border:1px solid #e5e7eb;padding:16px;border-radius:10px;background:#fafafa;">
+                  <img src="data:image/png;base64,{b64}" style="max-width:280px;border-radius:6px;flex-shrink:0;"/>
+                  <div style="flex:1;font-size:14px;color:#111827;">
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
+                      <span style="background:{sev_color};color:white;font-weight:700;padding:4px 10px;border-radius:6px;font-size:13px;">SEV {r.severity}/5</span>
+                      <span style="font-size:16px;font-weight:600;text-transform:capitalize;">{r.disaster_type.replace("_", " ")}</span>
+                      <span style="color:#6b7280;font-size:12px;">conf {r.disaster_type_confidence:.0%}</span>
+                    </div>
+                    <div style="margin-bottom:8px;"><b>Hazards:</b> {hazards}</div>
+                    <div style="margin-bottom:8px;"><b>People:</b> {ppl_str}</div>
+                    <div style="margin-bottom:8px;padding:8px 10px;background:white;border-left:3px solid {sev_color};border-radius:3px;">
+                      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Immediate action</div>
+                      <div style="margin-top:2px;">{r.immediate_action}</div>
+                    </div>
+                    <div style="margin-top:10px;">
+                      <span style="background:{routing_color}22;color:{routing_color};font-weight:600;padding:3px 8px;border-radius:4px;font-size:12px;">{routing_label}</span>
+                      <span style="color:#6b7280;font-size:12px;margin-left:8px;">{r.routing_rationale}</span>
+                    </div>
+                    <div style="margin-top:8px;font-size:11px;color:#9ca3af;font-family:ui-monospace,SFMono-Regular,monospace;">
+                      {r.report_id} · {res["wall_sec"]:.1f}s on Kaggle T4
+                    </div>
+                  </div>
+                </div>
+                ''')
+            cards.append('</div>')
+            display(HTML(''.join(cards)))
+    """),
+
+    code("""
         # ── 2.4 Free E2B from GPU before loading 31B ──────────────────────
         import gc, torch
         if E2B_LOADED:
