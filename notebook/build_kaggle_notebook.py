@@ -176,7 +176,10 @@ CELLS = [
         # ── Load the schema package + system prompts ──────────────────────
         # We need grg early because every downstream tier (edge, routing,
         # sync, synthesis) validates against the same Pydantic schemas.
-        import sys, re, pathlib
+        # json + Path go in here too so every later cell can use them
+        # without re-importing.
+        import sys, re, json, pathlib
+        from pathlib import Path
         sys.path.insert(0, str(pathlib.Path.cwd()))
 
         for _mod in list(sys.modules):
